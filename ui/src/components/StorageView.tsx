@@ -59,7 +59,7 @@ export const StorageView: FC<Props> = ({ storage, edit }: Props) => {
 					THIS CANNOT BE UNDONE!
 				</Modal.Header>
 				<Modal.Content>
-					Are you sure you want to remove this storage?
+					Are you sure you want to remove this storage? This will not remove the parts contained in the storage.
 				</Modal.Content>
 				<Modal.Actions>
 					<Button content="Cancel" color="black" onClick={() => setOpen(false)} />
