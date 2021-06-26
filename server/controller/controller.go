@@ -48,36 +48,3 @@ func CreateLabelPart(c *gin.Context) {
 
 	c.Data(http.StatusOK, "image/png", png)
 }
-
-// @todo Integrate both of these functions into CreatePart/UpdatePart/DeletePart
-func CreateLink(c *gin.Context) {
-	var link model.Link
-	if err := c.ShouldBindJSON(&link); err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
-		return
-	}
-
-	Nil := model.ID{uuid.Nil}
-	if link.Part == Nil {
-		c.JSON(http.StatusNotFound, gin.H{"error": "Link needs to be associated with a part!"})
-		return
-	}
-
-	config.GetDB().Save(&link)
-	c.JSON(http.StatusCreated, gin.H{"message": "Link created successfully!", "data": link})
-}
-
-func DeleteLink(c *gin.Context) {
-	id := c.Param("id")
-
-	var link model.Link
-	config.GetDB().First(&link, id)
-
-	if link.ID == 0 {
-		c.JSON(http.StatusNotFound, gin.H{"message": "No link found!"})
-		return
-	}
-
-	config.GetDB().Delete(&link)
-	c.JSON(http.StatusOK, gin.H{"message": "Link deleted successfully!", "data": link})
-}

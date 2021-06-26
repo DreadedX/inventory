@@ -36,12 +36,6 @@ func SetupRoutes() *gin.Engine {
 			storage.PUT("update/:id", controller.UpdateStorage)
 			storage.DELETE("delete/:id", controller.DeleteStorage)
 		}
-
-		link := v1.Group("link")
-		{
-			link.POST("create", controller.CreateLink)
-			link.DELETE("delete/:id", controller.DeleteLink)
-		}
 	}
 
 
