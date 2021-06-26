@@ -17,12 +17,12 @@ const Item: FC<ItemProps> = ({ storage }: ItemProps) => {
 		history.push("/storage/" + storage.id)
 	};
 
-	return (<Table.Row style={{cursor: 'pointer'}} warning={!storage.partCount} onClick={handleClick}>
+	return (<Table.Row style={{cursor: 'pointer'}} warning={!storage?.partCount} onClick={handleClick}>
 		<Table.Cell>
 			{storage.name}
 		</Table.Cell>
 		<Table.Cell textAlign="center">
-			{storage.partCount}
+			{storage?.partCount || 0}
 		</Table.Cell>
 	</Table.Row>);
 }

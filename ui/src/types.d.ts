@@ -5,6 +5,7 @@ interface ApiPart {
 	footprint: string
 	quantity: number
 	storage?: ApiStorage
+	links?: string[]
 }
 
 type Type = "part" | "storage";

@@ -30,8 +30,8 @@ export const Storages: FC = () => {
 			<Container style={{ margin: "3em" }}>
 				{ status || <LoadingBox loading={ loading }>
 					<StorageList storage={ storage }/>
-					<Button basic icon="add" as={Link} to="/storage/create" floated="right" />
 				</LoadingBox>}
+				<Button basic icon="add" as={Link} to="/storage/create" floated="right" />
 			</Container>
 	);
 };

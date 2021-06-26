@@ -3,8 +3,8 @@ package model
 import (
 	"encoding/json"
 
+	"gorm.io/gorm"
 	"github.com/btcsuite/btcutil/base58"
-
 	"github.com/google/uuid"
 )
 
@@ -45,53 +45,33 @@ func (id *ID) UnmarshalJSON(data []byte) error {
 }
 
 type Part struct {
-	ID ID `json:"id" gorm:"primary_key"`
+	ID ID `json:"id" gorm:"type:uuid;primary_key"`
 	Name string `json:"name"`
 	Description string `json:"description"`
 	Footprint string `json:"footprint"`
 	Quantity int `json:"quantity"`
-	Storage ID `json:"storage"`
+	Storage ID `json:"storage" gorm:"type:uuid"`
+}
+
+func (p *Part) BeforeCreate(tx *gorm.DB) (err error) {
+	p.ID = ID{uuid.New()}
+
+	return
 }
 
 type Storage struct {
-	ID ID `json:"id" gorm:"primary_key"`
+	ID ID `json:"id" gorm:"type:uuid;primary_key"`
 	Name string `json:"name"`
 }
 
-// func (s Storage) MarshalJSON() ([]byte, error) {
-// 	stringID := ""
-// 	if s.ID != uuid.Nil {
-// 		data, err := s.ID.MarshalBinary()
-// 		if err != nil {
-// 			return nil, err
-// 		}
-// 		stringID = base58.Encode(data)
-// 	}
-//
-// 	return json.Marshal(storageMirror{
-// 		ID: stringID,
-// 		Name: s.Name,
-// 	})
-// }
-//
-// func (s *Storage) UnmarshalJSON(data []byte) error {
-// 	var sm storageMirror
-// 	if err := json.Unmarshal(data, &sm); err != nil {
-// 		return err
-// 	}
-//
-// 	s.Name = sm.Name
-//
-// 	if len(sm.ID) > 0 {
-// 		id, err := uuid.FromBytes(base58.Decode(sm.ID))
-// 		if err != nil {
-// 			return err
-// 		}
-//
-// 		s.ID = id
-// 	} else {
-// 		s.ID = uuid.Nil
-// 	}
-//
-// 	return nil
-// }
+func (s *Storage) BeforeCreate(tx *gorm.DB) (err error) {
+	s.ID = ID{uuid.New()}
+
+	return
+}
+
+type Link struct {
+	ID int64 `gorm:"primary_key"`
+	Url string
+	Part ID `gorm:"type:uuid"`
+}

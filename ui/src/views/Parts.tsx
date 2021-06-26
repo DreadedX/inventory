@@ -30,8 +30,8 @@ export const Parts: FC = () => {
 			<Container style={{ margin: "3em" }}>
 				{ status || <LoadingBox loading={ loading }>
 					<PartList parts={ parts } />
-					<Button basic icon="add" as={Link} to="/part/create" floated="right" />
 				</LoadingBox>}
+				<Button basic icon="add" as={Link} to="/part/create" floated="right" />
 			</Container>
 	);
 };

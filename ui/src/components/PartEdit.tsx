@@ -1,6 +1,6 @@
 import { FC, Fragment, ChangeEvent, SyntheticEvent, KeyboardEvent, useState, useEffect } from 'react';
 import { useHistory } from 'react-router';
-import { Segment, Form, Message, DropdownProps, DropdownItemProps, Menu, Icon } from 'semantic-ui-react';
+import { Segment, Form, Message, DropdownProps, DropdownItemProps, Menu, Icon, Input, Button } from 'semantic-ui-react';
 import TextareaAutosize from 'react-textarea-autosize';
 import { request } from '../request';
 import { Qr } from '../components/Qr';
@@ -63,6 +63,12 @@ export const PartEdit: FC<Props> = ( { part, setPart, create }: Props ) => {
 		setPartEdit({...partEdit, storage: {id: (data.value || "") as string, name: data.text || ""}})
 	}
 
+	const handleChangeUrl = (event: ChangeEvent<HTMLInputElement>, index: number) => {
+		var links = [...partEdit.links || []];
+		links[index] = event.target.value.replace(/^\/\/|^.*?:(\/\/)?/, '');
+		setPartEdit({...partEdit, links: links})
+	}
+
 	const addStorage = (_event: KeyboardEvent<HTMLElement>, data: DropdownProps) => {
 		setLoading(true)
 
@@ -85,6 +91,18 @@ export const PartEdit: FC<Props> = ( { part, setPart, create }: Props ) => {
 				// setStatus(<StatusBox icon="times" message={ error.message }/>)
 				setLoading(false);
 			});
+	}
+
+	const addUrl = () => {
+		var links = [...partEdit.links || []];
+		links.push("");
+		setPartEdit({...partEdit, links: links})
+	}
+
+	const removeUrl = (index: number) => {
+		var links = [...partEdit.links || []];
+		links.splice(index, 1);
+		setPartEdit({...partEdit, links: links});
 	}
 
 	const save = () => {
@@ -170,6 +188,14 @@ export const PartEdit: FC<Props> = ( { part, setPart, create }: Props ) => {
 				<Form.Field>
 					<label>Description</label>
 					<TextareaAutosize minRows={10} name="description" value={partEdit.description} onChange={handleChange} />
+				</Form.Field>
+
+				<Form.Field width={8}>
+					<label>Links</label>
+					{ partEdit.links?.map((link, index) => (<Form.Field key={index}>
+						<Input action={{color: 'red', icon: 'trash', onClick: () => removeUrl(index)}} label="https://"  value={link} onChange={(event) => handleChangeUrl(event, index)} />
+					</Form.Field>))}
+					<Button onClick={addUrl}>Add URL</Button>
 				</Form.Field>
 			</Form>
 		</Segment>

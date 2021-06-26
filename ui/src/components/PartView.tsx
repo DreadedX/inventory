@@ -91,6 +91,13 @@ export const PartView: FC<Props> = ({ part, edit }: Props) => {
 				</Form.Group>
 
 				<Field width={16} label="Description" value={part.description}/>
+
+				<Form.Field>
+					<label>Links</label>
+					{ part.links?.map((link, index) => (<Form.Field key={index}>
+						<a href={"https://" + link} >{link}</a>
+					</Form.Field>))}
+				</Form.Field>
 			</Form>
 		</Segment>
 		{ status }
