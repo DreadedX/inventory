@@ -12,7 +12,13 @@ interface Props {
 }
 
 export const PartEdit: FC<Props> = ( { part, setPart, create }: Props ) => {
-	const [ partEdit, setPartEdit ] = useState<ApiPart>(part);
+	const [ name, setName ] = useState<string>(part.name);
+	const [ description, setDescription ] = useState<string>(part.description);
+	const [ footprint, setFootprint ] = useState<string>(part.footprint);
+	const [ quantity, setQuantity ] = useState<number>(part.quantity);
+	const [ storageID, setStorageID ] = useState<string>(part.storageID || "");
+	const [ links, setLinks ] = useState<ApiLink[]>(part.links || []);
+
 	const [ storage, setStorage ] = useState<DropdownItemProps[]>([]);
 
 	const [ status, setStatus ] = useState<JSX.Element>();
@@ -41,32 +47,26 @@ export const PartEdit: FC<Props> = ( { part, setPart, create }: Props ) => {
 			});
 	}, []);
 
-	useEffect(() => {
-		setPartEdit(part);
-	}, [part])
-
 	const handleChange = (event: ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
 		if (event.target.name === "name") {
-			setPartEdit({...partEdit, name: event.target.value})
+			setName(event.target.value);
 		} else if (event.target.name === "description") {
-			setPartEdit({...partEdit, description: event.target.value})
+			setDescription(event.target.value);
 		} else if (event.target.name === "footprint") {
-			setPartEdit({...partEdit, footprint: event.target.value})
+			setFootprint(event.target.value);
 		} else if (event.target.name === "quantity") {
-			setPartEdit({...partEdit, quantity: Number(event.target.value)})
+			setQuantity(Number(event.target.value));
 		}
 	}
 
 	const handleChangeDropdown = (_event: SyntheticEvent<HTMLElement, Event>, data: DropdownProps) => {
-		// We do not update the name of the storage
-		// This is not needed since the dropdown only needs the key to display the correct value
-		setPartEdit({...partEdit, storage: {id: (data.value || "") as string, name: data.text || ""}})
+		setStorageID(String(data.value));
 	}
 
 	const handleChangeUrl = (event: ChangeEvent<HTMLInputElement>, index: number) => {
-		var links = [...partEdit.links || []];
-		links[index] = event.target.value.replace(/^\/\/|^.*?:(\/\/)?/, '');
-		setPartEdit({...partEdit, links: links})
+		var ls: ApiLink[] = [...links];
+		ls[index].url = event.target.value.replace(/^\/\/|^.*?:(\/\/)?/, '');
+		setLinks(ls)
 	}
 
 	const addStorage = (_event: KeyboardEvent<HTMLElement>, data: DropdownProps) => {
@@ -81,7 +81,7 @@ export const PartEdit: FC<Props> = ( { part, setPart, create }: Props ) => {
 						text: response.data.name
 					}]);
 
-					setPartEdit({...partEdit, storage: {id: response.data.id, name: response.data.name}})
+					setStorageID(response.data.id);
 				}
 
 				setLoading(false);
@@ -94,25 +94,26 @@ export const PartEdit: FC<Props> = ( { part, setPart, create }: Props ) => {
 	}
 
 	const addUrl = () => {
-		var links = [...partEdit.links || []];
-		links.push("");
-		setPartEdit({...partEdit, links: links})
+		var ls: ApiLink[] = [...links];
+		ls.push({id: 0, url: "", partID: ""});
+		setLinks(ls)
 	}
 
 	const removeUrl = (index: number) => {
-		var links = [...partEdit.links || []];
-		links.splice(index, 1);
-		setPartEdit({...partEdit, links: links});
+		var ls = [...links];
+		ls.splice(index, 1);
+		setLinks(ls);
 	}
 
 	const save = () => {
 		setSaving(true);
 
+		console.log(JSON.stringify({name: name, description: description, footprint: footprint, quantity: quantity, storageID: storageID, links: links}));
+
 		if (create) {
-			request<ApiPart>("/v1/part/create", {method: "POST", body: JSON.stringify({...partEdit, storage: partEdit.storage?.id || ""})})
+			request<ApiPart>("/v1/part/create", {method: "POST", body: JSON.stringify({name: name, description: description, footprint: footprint, quantity: quantity, storageID: storageID, links: links})})
 				.then(response => {
 					if (response.data) {
-						console.log(response.data)
 						setPart(response.data)
 
 						history.push("/part/" + response.data.id)
@@ -126,13 +127,12 @@ export const PartEdit: FC<Props> = ( { part, setPart, create }: Props ) => {
 					setSaving(false);
 				});
 		} else {
-			request<ApiPart>("/v1/part/update/" + partEdit.id, {method: "PUT", body: JSON.stringify({...partEdit, storage: partEdit.storage?.id || ""})})
+			request<ApiPart>("/v1/part/update/" + part.id, {method: "PUT", body: JSON.stringify({name: name, description: description, footprint: footprint, quantity: quantity, storageID: storageID, links: links})})
 				.then(response => {
 					if (response.data) {
-						console.log(response.data)
 						setPart(response.data)
 
-						history.goBack()
+						history.replace("/part/" + part.id)
 					} else {
 						setStatus(<Message attached="bottom" negative header="Failed to save changes" content={response.message} />)
 						setSaving(false);
@@ -147,7 +147,7 @@ export const PartEdit: FC<Props> = ( { part, setPart, create }: Props ) => {
 
 	const onScan = (id: string, t: Type) => {
 		if (t === "storage") {
-			setPartEdit({...partEdit, storage: {id: id, name: partEdit.storage?.name || ""}});
+			setStorageID(id);
 		} else {
 			console.error("Not a valid storage code");
 			setStatus(<Message attached="bottom" negative header="QR code not valid" content="The QR code does not contain a valid storage ID" />)
@@ -157,9 +157,9 @@ export const PartEdit: FC<Props> = ( { part, setPart, create }: Props ) => {
 	return (<Fragment>
 		<Menu attached="top" size="large" text>
 			<Menu.Item header style={{marginLeft: '0.5em'}}>
-				{ partEdit.name || (create ? "Create part" : "Edit part") }
+				{ name || (create ? "Create part" : "Edit part") }
 			</Menu.Item>
-			{ !create && <Menu.Item position="right" onClick={() => history.goBack()}>
+			{ !create && <Menu.Item position="right" onClick={() => history.replace("/part/" + part.id)}>
 				<Icon name="cancel" />
 			</Menu.Item> }
 			<Menu.Item position={create ? "right" : undefined} onClick={save}>
@@ -169,31 +169,31 @@ export const PartEdit: FC<Props> = ( { part, setPart, create }: Props ) => {
 		<Segment color="purple" attached={status ? true : "bottom"} loading={saving}>
 			<Form>
 				<Form.Group>
-					<Form.Input width={12} label="Name" name="name" value={partEdit.name} onChange={handleChange} />
-					<Form.Input width={4} label="Footprint" name="footprint" value={partEdit.footprint} onChange={handleChange} />
+					<Form.Input width={12} label="Name" name="name" value={name} onChange={handleChange} />
+					<Form.Input width={4} label="Footprint" name="footprint" value={footprint} onChange={handleChange} />
 				</Form.Group>
 
 				<Form.Group>
 					<Form.Field width={5}>
 						<label>Storage</label>
 						<Form.Group>
-							<Form.Dropdown name="storage" value={partEdit.storage?.id || ""} allowAdditions loading={loading} clearable search selection additionLabel="Create storage: " options={storage} onAddItem={addStorage} onChange={handleChangeDropdown} />
+							<Form.Dropdown name="storage" value={storageID || ""} allowAdditions loading={loading} clearable search selection additionLabel="Create storage: " options={storage} onAddItem={addStorage} onChange={handleChangeDropdown} />
 							<Qr trigger={<Form.Button type="button" icon="qrcode"/>} onScan={onScan} />
 						</Form.Group>
 					</Form.Field>
 
-					<Form.Input width={2} label="Quantity" type="number" name="quantity" value={partEdit.quantity} onChange={handleChange} />
+					<Form.Input width={2} label="Quantity" type="number" name="quantity" value={quantity} onChange={handleChange} />
 				</Form.Group>
 
 				<Form.Field>
 					<label>Description</label>
-					<TextareaAutosize minRows={10} name="description" value={partEdit.description} onChange={handleChange} />
+					<TextareaAutosize minRows={10} name="description" value={description} onChange={handleChange} />
 				</Form.Field>
 
 				<Form.Field width={8}>
 					<label>Links</label>
-					{ partEdit.links?.map((link, index) => (<Form.Field key={index}>
-						<Input action={{color: 'red', icon: 'trash', onClick: () => removeUrl(index)}} label="https://"  value={link} onChange={(event) => handleChangeUrl(event, index)} />
+					{ links.map((link, index) => (<Form.Field key={index}>
+						<Input action={{color: 'red', icon: 'trash', onClick: () => removeUrl(index)}} label="https://"  value={link.url} onChange={(event) => handleChangeUrl(event, index)} />
 					</Form.Field>))}
 					<Button onClick={addUrl}>Add URL</Button>
 				</Form.Field>

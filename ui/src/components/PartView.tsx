@@ -33,7 +33,7 @@ export const PartView: FC<Props> = ({ part, edit }: Props) => {
 		request<ApiStorage>("/v1/part/delete/" + part.id, {method: "DELETE"})
 			.then(response => {
 				if (response.data) {
-					history.push("/part")
+					history.goBack()
 				} else {
 					setStatus(<Message error attached="bottom" header="Failed to remove" content={response.message} />)
 				}
@@ -57,7 +57,7 @@ export const PartView: FC<Props> = ({ part, edit }: Props) => {
 			<Menu.Item header style={{marginLeft: '0.5em'}}>
 				{part.name}
 			</Menu.Item>
-			<Menu.Item position="right" as={Link} to={edit}>
+			<Menu.Item position="right" onClick={() => history.replace(edit)}>
 				<Icon name="edit" />
 			</Menu.Item>
 			<Modal
@@ -92,12 +92,12 @@ export const PartView: FC<Props> = ({ part, edit }: Props) => {
 
 				<Field width={16} label="Description" value={part.description}/>
 
-				<Form.Field>
+				{ part.links?.length && <Form.Field>
 					<label>Links</label>
 					{ part.links?.map((link, index) => (<Form.Field key={index}>
-						<a href={"https://" + link} >{link}</a>
+						<a href={"https://" + link.url} >{link.url}</a>
 					</Form.Field>))}
-				</Form.Field>
+				</Form.Field>}
 			</Form>
 		</Segment>
 		{ status }

@@ -54,7 +54,7 @@ func main() {
 
 		s := v1.Group("storage")
 		{
-			s.GET("list", part.FetchAll(env))
+			s.GET("list", storage.FetchAll(env))
 			s.GET("get/:id", storage.Fetch(env))
 			s.POST("create", storage.Create(env))
 			s.PUT("update/:id", storage.Update(env))

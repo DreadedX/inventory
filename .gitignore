@@ -1,6 +1,7 @@
 data/
 ui-dist
 label/env/
+tmp/
 
 # dependencies
 /node_modules

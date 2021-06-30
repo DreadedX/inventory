@@ -10,7 +10,7 @@ interface Props {
 }
 
 export const StorageEdit: FC<Props> = ( { storage, setStorage, create }: Props ) => {
-	const [ storageEdit, setStorageEdit ] = useState<ApiStorage>(storage);
+	const [ name, setName ] = useState<string>(storage.name);
 	const [ status, setStatus ] = useState<JSX.Element>();
 	const [ saving, setSaving ] = useState<boolean>(false);
 
@@ -18,7 +18,7 @@ export const StorageEdit: FC<Props> = ( { storage, setStorage, create }: Props )
 
 	const handleChange = (event: ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
 		if (event.target.name === "name") {
-			setStorageEdit({...storageEdit, name: event.target.value})
+			setName(event.target.value);
 		}
 	}
 
@@ -26,7 +26,7 @@ export const StorageEdit: FC<Props> = ( { storage, setStorage, create }: Props )
 		setSaving(true);
 
 		if (create) {
-			request<ApiPart>("/v1/storage/create", {method: "POST", body: JSON.stringify({name: storageEdit.name || ""})})
+			request<ApiPart>("/v1/storage/create", {method: "POST", body: JSON.stringify({name: name})})
 				.then(response => {
 					if (response.data) {
 						console.log(response.data)
@@ -43,13 +43,13 @@ export const StorageEdit: FC<Props> = ( { storage, setStorage, create }: Props )
 					setSaving(false);
 				});
 		} else {
-			request<ApiPart>("/v1/storage/update/" + storageEdit.id, {method: "PUT", body: JSON.stringify({name: storageEdit.name || ""})})
+			request<ApiPart>("/v1/storage/update/" + storage.id, {method: "PUT", body: JSON.stringify({name: name})})
 				.then(response => {
 					if (response.data) {
 						console.log(response.data)
 						setStorage(response.data)
 
-						history.goBack()
+						history.replace("/storage/" + response.data.id)
 					} else {
 						setStatus(<Message attached="bottom" negative header="Failed to save changes" content={response.message} />)
 						setSaving(false);
@@ -65,9 +65,9 @@ export const StorageEdit: FC<Props> = ( { storage, setStorage, create }: Props )
 	return (<Fragment>
 		<Menu attached="top" size="large" text>
 			<Menu.Item header style={{marginLeft: '0.5em'}}>
-				{ storageEdit.name || (create ? "Create storage" : "Edit storage") }
+				{ name || (create ? "Create storage" : "Edit storage") }
 			</Menu.Item>
-			{ !create && <Menu.Item position="right" onClick={() => history.goBack()}>
+			{ !create && <Menu.Item position="right" onClick={() => history.replace("/storage/" + storage.id)}>
 				<Icon name="cancel" />
 			</Menu.Item> }
 			<Menu.Item position={create ? "right" : undefined} onClick={save}>
@@ -76,7 +76,7 @@ export const StorageEdit: FC<Props> = ( { storage, setStorage, create }: Props )
 		</Menu>
 		<Segment color="purple" attached={status ? true : "bottom"} loading={saving}>
 			<Form>
-				<Form.Input label="Name" name="name" value={storageEdit.name} onChange={handleChange} />
+				<Form.Input label="Name" name="name" value={name} onChange={handleChange} />
 			</Form>
 		</Segment>
 		{ status }

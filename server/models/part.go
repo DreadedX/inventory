@@ -11,7 +11,9 @@ type Part struct {
 	Description string `json:"description"`
 	Footprint string `json:"footprint"`
 	Quantity int `json:"quantity"`
-	Storage ID `json:"storage" gorm:"type:uuid"`
+	StorageID *ID `json:"storageID,omitempty" gorm:"type:uuid"`
+	Storage *Storage `json:"storage,omitempty"`
+	Links []Link `json:"links,omitempty"`
 }
 
 func (p *Part) BeforeCreate(tx *gorm.DB) (err error) {

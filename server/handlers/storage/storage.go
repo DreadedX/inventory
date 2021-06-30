@@ -7,15 +7,9 @@ import (
 	"github.com/gin-gonic/gin"
 	"github.com/google/uuid"
 
-	"inventory/models"
 	"inventory/handlers"
+	"inventory/models"
 )
-
-type getStorage struct {
-	models.Storage
-	Parts []models.Part `json:"parts,omitempty"`
-	PartCount int64 `json:"partCount,omitempty"`
-}
 
 func FetchAll(env *handlers.Env) gin.HandlerFunc {
 	return func(c *gin.Context) {
@@ -27,15 +21,12 @@ func FetchAll(env *handlers.Env) gin.HandlerFunc {
 			return
 		}
 
-		var gs []getStorage
-		for _, storage := range storages {
-			var count int64
-			env.DB.Model(&models.Part{}).Where("storage = ?", storage.ID).Count(&count);
-
-			gs = append(gs, getStorage{Storage: storage, PartCount: count})
+		for i, storage := range storages {
+			storages[i].PartCount = env.DB.Model(&storage).Association("Parts").Count()
 		}
 
-		c.JSON(http.StatusOK, gin.H{"data": gs})
+
+		c.JSON(http.StatusOK, gin.H{"data": storages})
 	}
 }
 
@@ -44,26 +35,20 @@ func Fetch(env *handlers.Env) gin.HandlerFunc {
 		partID := c.Param("id")
 
 		id, err := uuid.FromBytes(base58.Decode(partID))
-
 		if err != nil {
 			c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
 			return
 		}
 
 		var storage models.Storage
-		env.DB.First(&storage, id)
-
+		env.DB.Preload("Parts").First(&storage, id)
 		Nil := models.ID{uuid.Nil}
 		if storage.ID == Nil {
 			c.JSON(http.StatusNotFound, gin.H{"message": "No storage found!"})
 			return
 		}
 
-		gs := getStorage{Storage: storage}
-		env.DB.Where("storage = ?", storage.ID).Find(&gs.Parts)
-		gs.PartCount = int64(len(gs.Parts))
-
-		c.JSON(http.StatusOK, gin.H{"data": gs})
+		c.JSON(http.StatusOK, gin.H{"data": storage})
 	}
 }
 
@@ -75,7 +60,11 @@ func Create(env *handlers.Env) gin.HandlerFunc {
 			return
 		}
 
-		env.DB.Save(&storage)
+		if err := env.DB.Save(&storage).Error; err != nil {
+			c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+			return
+		}
+
 		c.JSON(http.StatusCreated, gin.H{"message": "Storage created successfully!", "data": storage})
 	}
 }
@@ -85,28 +74,24 @@ func Delete(env *handlers.Env) gin.HandlerFunc {
 		storageID := c.Param("id")
 
 		id, err := uuid.FromBytes(base58.Decode(storageID))
-
 		if err != nil {
 			c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
 			return
 		}
 
 		var storage models.Storage
-		env.DB.First(&storage, id)
-
+		env.DB.Preload("Parts").First(&storage, id)
 		Nil := models.ID{uuid.Nil}
 		if storage.ID == Nil {
 			c.JSON(http.StatusNotFound, gin.H{"message": "No storage found!"})
 			return
 		}
 
-		var parts []models.Part
-		env.DB.Where("storage = ?", storage.ID).Find(&parts)
-		for _, part := range parts {
-			env.DB.Model(&part).Update("storage", models.ID{uuid.Nil})
+		if err := env.DB.Delete(&storage).Error; err != nil {
+			c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+			return
 		}
 
-		env.DB.Delete(&storage)
 		c.JSON(http.StatusOK, gin.H{"message": "Storage deleted successfully!", "data": storage})
 	}
 }
@@ -115,35 +100,43 @@ func Update(env *handlers.Env) gin.HandlerFunc {
 	return func(c *gin.Context) {
 		storageID := c.Param("id")
 
+		// Convert the string id to uuid
 		id, err := uuid.FromBytes(base58.Decode(storageID))
 		if err != nil {
 			c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
 			return
 		}
 
-		var newStorage models.Storage
-		if err := c.ShouldBindJSON(&newStorage); err != nil {
-			c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
-			return
-		}
-
-		var storage models.Storage
-		env.DB.First(&storage, id)
-
-		Nil := models.ID{uuid.Nil}
-		if storage.ID == Nil {
+		// Make sure the entry exist
+		var count int64
+		env.DB.Model(&models.Storage{}).Where("id = ?", id).Count(&count)
+		if count <= 0 {
 			c.JSON(http.StatusNotFound, gin.H{"message": "No storage found!"})
 			return
 		}
 
-		env.DB.Model(&storage).Select("*").Omit("id").Updates(newStorage)
+		// Convert the provided JSON to struct
+		var storage models.Storage
+		if err := c.ShouldBindJSON(&storage); err != nil {
+			c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+			return
+		}
+		// Make sure that the ID is set to the correct value
+		storage.ID = models.ID{id}
 
-		env.DB.First(&storage, id)
+		// Update storage
+		if err := env.DB.Omit("Parts", "ID").Updates(&storage).Error; err != nil {
+			c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+			return
+		}
 
-		gs := getStorage{Storage: storage}
-		env.DB.Where("storage = ?", storage.ID).Find(&gs.Parts)
-		gs.PartCount = int64(len(gs.Parts))
+		// Load the updated entry
+		if err := env.DB.Preload("Parts").First(&storage, id).Error; err != nil {
+			c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+			return
+		}
 
-		c.JSON(http.StatusOK, gin.H{"message": "Storage updated successfully!", "data": gs})
+		// Return the updated entry
+		c.JSON(http.StatusOK, gin.H{"message": "Storage updated successfully!", "data": storage})
 	}
 }

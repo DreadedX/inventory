@@ -4,18 +4,24 @@ interface ApiPart {
 	description: string
 	footprint: string
 	quantity: number
+	storageID?: string
 	storage?: ApiStorage
-	links?: string[]
+	links?: ApiLink[]
 }
 
 type Type = "part" | "storage";
 
-// @todo We need to split this into multiple types depending on the reqeuest
 interface ApiStorage {
 	id: string
 	name: string
 	parts?: ApiPart[]
 	partCount?: number
+}
+
+interface ApiLink {
+	id: number
+	url: string
+	partID: string
 }
 
 interface ApiResponse<T> {

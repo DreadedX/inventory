@@ -12,16 +12,11 @@ type ID struct {
 }
 
 func (id ID) MarshalJSON() ([]byte, error) {
-	Nil := ID{uuid.Nil}
-	if id != Nil {
-		data, err := id.MarshalBinary()
-		if err != nil {
-			return nil, err
-		}
-		return json.Marshal(base58.Encode(data))
+	data, err := id.MarshalBinary()
+	if err != nil {
+		return nil, err
 	}
-
-	return json.Marshal("")
+	return json.Marshal(base58.Encode(data))
 }
 
 func (id *ID) UnmarshalJSON(data []byte) error {

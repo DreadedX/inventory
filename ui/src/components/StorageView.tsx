@@ -28,7 +28,7 @@ export const StorageView: FC<Props> = ({ storage, edit }: Props) => {
 		request<ApiStorage>("/v1/storage/delete/" + storage.id, {method: "DELETE"})
 			.then(response => {
 				if (response.data) {
-					history.push("/storage")
+					history.goBack()
 				} else {
 					setStatus(<Message error attached={storage.parts?.length ? true : "bottom"} header="Failed to remove" content={response.message} />)
 				}
@@ -46,7 +46,7 @@ export const StorageView: FC<Props> = ({ storage, edit }: Props) => {
 			<Menu.Item header style={{marginLeft: '0.5em'}}>
 				{storage.name}
 			</Menu.Item>
-			<Menu.Item position="right" as={Link} to={edit}>
+			<Menu.Item position="right" onClick={() => history.replace(edit)}>
 				<Icon name="edit" />
 			</Menu.Item>
 			<Modal
