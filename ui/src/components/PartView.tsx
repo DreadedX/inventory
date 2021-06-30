@@ -1,5 +1,5 @@
 import { FC, Fragment, useState, useEffect } from 'react';
-import { useHistory, Link } from 'react-router-dom';
+import { useHistory } from 'react-router-dom';
 import { Segment, Form, Message, Menu, Icon, Modal, Button } from 'semantic-ui-react';
 import { request } from '../request';
 

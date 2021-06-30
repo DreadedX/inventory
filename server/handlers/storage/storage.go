@@ -65,6 +65,8 @@ func Create(env *handlers.Env) gin.HandlerFunc {
 			return
 		}
 
+		env.Hub.Broadcast <- []byte("storage:create")
+
 		c.JSON(http.StatusCreated, gin.H{"message": "Storage created successfully!", "data": storage})
 	}
 }
@@ -91,6 +93,8 @@ func Delete(env *handlers.Env) gin.HandlerFunc {
 			c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
 			return
 		}
+
+		env.Hub.Broadcast <- []byte("storage:delete")
 
 		c.JSON(http.StatusOK, gin.H{"message": "Storage deleted successfully!", "data": storage})
 	}
@@ -135,6 +139,8 @@ func Update(env *handlers.Env) gin.HandlerFunc {
 			c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
 			return
 		}
+
+		env.Hub.Broadcast <- []byte("storage:update")
 
 		// Return the updated entry
 		c.JSON(http.StatusOK, gin.H{"message": "Storage updated successfully!", "data": storage})

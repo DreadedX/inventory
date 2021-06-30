@@ -10,6 +10,7 @@ import (
 	"gorm.io/driver/postgres"
 
 	"inventory/models"
+	"inventory/socket"
 	"inventory/handlers"
 	"inventory/handlers/part"
 	"inventory/handlers/storage"
@@ -30,10 +31,19 @@ func main() {
 	}
 	Migrate(db)
 
-	env := &handlers.Env{DB: db}
+	hub := socket.NewHub()
+	go hub.Run()
+
+
+	env := &handlers.Env{DB: db, Hub: hub}
 
 	gin.SetMode(gin.ReleaseMode)
 	router := gin.Default()
+
+	// This is just for testing socket stuff
+	router.GET("/socket", func(c *gin.Context) {
+		c.File("../socket.html")
+	})
 
 	// Host react ui
 	router.Use(static.Serve("/", static.LocalFile("../ui-dist", false)))
@@ -63,6 +73,10 @@ func main() {
 
 		v1.GET("label/:id", label.Generate(env))
 	}
+
+	router.GET("/ws", func(c *gin.Context) {
+		socket.ServeWs(hub, c.Writer, c.Request)
+	})
 
 	port := os.Getenv("PORT")
 	if port == "" {
