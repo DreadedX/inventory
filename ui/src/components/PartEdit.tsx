@@ -108,10 +108,11 @@ export const PartEdit: FC<Props> = ( { part, setPart, create }: Props ) => {
 	const save = () => {
 		setSaving(true);
 
-		console.log(JSON.stringify({name: name, description: description, footprint: footprint, quantity: quantity, storageID: storageID, links: links}));
+		let body = JSON.stringify({name: name, description: description, footprint: footprint, quantity: quantity, storageID: storageID || null, links: links});
+		console.log(body)
 
 		if (create) {
-			request<ApiPart>("/v1/part/create", {method: "POST", body: JSON.stringify({name: name, description: description, footprint: footprint, quantity: quantity, storageID: storageID, links: links})})
+			request<ApiPart>("/v1/part/create", {method: "POST", body: body})
 				.then(response => {
 					if (response.data) {
 						setPart(response.data)
@@ -127,7 +128,7 @@ export const PartEdit: FC<Props> = ( { part, setPart, create }: Props ) => {
 					setSaving(false);
 				});
 		} else {
-			request<ApiPart>("/v1/part/update/" + part.id, {method: "PUT", body: JSON.stringify({name: name, description: description, footprint: footprint, quantity: quantity, storageID: storageID, links: links})})
+			request<ApiPart>("/v1/part/update/" + part.id, {method: "PUT", body: body})
 				.then(response => {
 					if (response.data) {
 						setPart(response.data)

@@ -25,8 +25,10 @@ export const StorageEdit: FC<Props> = ( { storage, setStorage, create }: Props )
 	const save = () => {
 		setSaving(true);
 
+		var body = JSON.stringify({name: name});
+
 		if (create) {
-			request<ApiPart>("/v1/storage/create", {method: "POST", body: JSON.stringify({name: name})})
+			request<ApiPart>("/v1/storage/create", {method: "POST", body: body})
 				.then(response => {
 					if (response.data) {
 						console.log(response.data)
@@ -43,7 +45,7 @@ export const StorageEdit: FC<Props> = ( { storage, setStorage, create }: Props )
 					setSaving(false);
 				});
 		} else {
-			request<ApiPart>("/v1/storage/update/" + storage.id, {method: "PUT", body: JSON.stringify({name: name})})
+			request<ApiPart>("/v1/storage/update/" + storage.id, {method: "PUT", body: body})
 				.then(response => {
 					if (response.data) {
 						console.log(response.data)

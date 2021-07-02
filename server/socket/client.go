@@ -65,6 +65,7 @@ func (c *Client) readPump() {
 	c.conn.SetReadLimit(maxMessageSize)
 	c.conn.SetReadDeadline(time.Now().Add(pongWait))
 	c.conn.SetPongHandler(func(string) error { c.conn.SetReadDeadline(time.Now().Add(pongWait)); return nil })
+	// @todo In the future we only want to send things to clients, not receive
 	for {
 		_, message, err := c.conn.ReadMessage()
 		if err != nil {

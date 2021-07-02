@@ -1,21 +1,26 @@
-import { FC, useState, useEffect } from 'react';
+import { FC, useState, useEffect, MutableRefObject } from 'react';
 import { Link } from 'react-router-dom';
 import { Container, Button } from 'semantic-ui-react';
 import { StorageList, LoadingBox, StatusBox } from '../components';
 import { request } from '../request';
 
-export const Storages: FC = () => {
+interface Props {
+	ws: MutableRefObject<WebSocket | undefined>
+}
+
+export const Storages: FC<Props> = ({ ws }: Props) => {
 	const [storage, setStorage] = useState<ApiStorage[]>([]);
 	const [loading, setLoading] = useState<boolean>(true);
 	const [status, setStatus] = useState<JSX.Element>();
 
-	useEffect(() => {
+	const update = () => {
 		request<ApiStorage[]>("v1/storage/list")
 			.then(response => {
 				if (response.data) {
-					setStorage(response.data)
+					setStatus(undefined);
+					setStorage(response.data);
 				} else if (response.message) {
-					setStatus(<StatusBox icon="question" message={ response.message }/>)
+					setStatus(<StatusBox icon="question" message={ response.message }/>);
 				}
 
 				setLoading(false);
@@ -24,7 +29,21 @@ export const Storages: FC = () => {
 				setLoading(false);
 				setStatus(<StatusBox icon="times" message={ error.message }/>)
 			});
-	}, []);
+	}
+
+	useEffect(update, []);
+
+	useEffect(() => {
+		if (ws.current)  {
+			ws.current.onmessage = update;
+		}
+
+		return () => {
+			if (ws.current) {
+				ws.current.onmessage = null;
+			}
+		}
+	}, [ws]);
 
 	return (
 			<Container style={{ margin: "3em" }}>

@@ -19,6 +19,8 @@ export const StorageView: FC<Props> = ({ storage, edit }: Props) => {
 	useEffect(() => {
 		if (!storage.parts?.length) {
 			setStatus(<Message warning attached="bottom" header="Storage is empty" />)
+		} else {
+			setStatus(undefined)
 		}
 	}, [storage]);
 
@@ -67,8 +69,7 @@ export const StorageView: FC<Props> = ({ storage, edit }: Props) => {
 				</Modal.Actions>
 			</Modal>
 		</Menu>
-		{ status }
-		{ storage.parts && <PartList parts={ storage.parts } storage /> }
+		{ status || (storage.parts && <PartList parts={ storage.parts } storage />) }
 	</Fragment>);
 };
 
