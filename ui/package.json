@@ -26,9 +26,7 @@
   },
   "scripts": {
     "start": "react-scripts start",
-    "prebuild": "rimraf ../ui-dist",
     "build": "react-scripts build",
-    "postbuild": "mv ./build ../ui-dist",
     "test": "react-scripts test",
     "eject": "react-scripts eject"
   },

@@ -1,6 +1,7 @@
 import { FC, Fragment, useState, useEffect } from 'react';
 import { useHistory } from 'react-router-dom';
 import { Segment, Form, Message, Menu, Icon, Modal, Button } from 'semantic-ui-react';
+import { PrintLabel } from './';
 import { request } from '../request';
 
 interface Props {
@@ -23,7 +24,7 @@ const Field: FC<FieldProps & Record<string, any>> = ({ label, value, ...props }:
 export const PartView: FC<Props> = ({ part, edit }: Props) => {
 	const [ open, setOpen ] = useState(false);
 	const [ removing, setRemoving ] = useState(false);
-	const [status, setStatus] = useState<JSX.Element>();
+	const [ status, setStatus ] = useState<JSX.Element>();
 
 	const history = useHistory();
 
@@ -57,7 +58,8 @@ export const PartView: FC<Props> = ({ part, edit }: Props) => {
 			<Menu.Item header style={{marginLeft: '0.5em'}}>
 				{part.name}
 			</Menu.Item>
-			<Menu.Item position="right" onClick={() => history.replace(edit)}>
+			<PrintLabel id={part.id} type="part" trigger={<Menu.Item position="right"><Icon name="print" /></Menu.Item>} />
+			<Menu.Item onClick={() => history.replace(edit)}>
 				<Icon name="edit" />
 			</Menu.Item>
 			<Modal

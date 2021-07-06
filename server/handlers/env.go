@@ -8,4 +8,6 @@ import (
 type Env struct {
 	DB *gorm.DB
 	Hub *socket.Hub
+	PythonPath string
+	LabelPath string
 }

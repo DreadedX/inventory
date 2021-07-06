@@ -1,20 +1,21 @@
 package main
 
 import (
+	"fmt"
 	"log"
 	"os"
 
-	"github.com/gin-gonic/gin"
 	"github.com/gin-contrib/static"
-	"gorm.io/gorm"
+	"github.com/gin-gonic/gin"
 	"gorm.io/driver/postgres"
+	"gorm.io/gorm"
 
-	"inventory/models"
-	"inventory/socket"
 	"inventory/handlers"
+	"inventory/handlers/label"
 	"inventory/handlers/part"
 	"inventory/handlers/storage"
-	"inventory/handlers/label"
+	"inventory/models"
+	"inventory/socket"
 )
 
 func Migrate(db *gorm.DB) {
@@ -24,7 +25,32 @@ func Migrate(db *gorm.DB) {
 }
 
 func main() {
-	dsn := "host=localhost port=5432 user=root dbname=testdb password=root sslmode=disable"
+	dbHost := os.Getenv("DB_HOST")
+	if dbHost == "" {
+		dbHost = "localhost"
+	}
+
+	dbPort := os.Getenv("DB_PORT")
+	if dbPort == "" {
+		dbPort = "5432"
+	}
+
+	dbName := os.Getenv("DB_NAME")
+	if dbName == "" {
+		dbName = "testdb"
+	}
+
+	dbUser := os.Getenv("DB_USER")
+	if dbUser == "" {
+		dbUser = "root"
+	}
+
+	dbPass := os.Getenv("DB_PASS")
+	if dbPass == "" {
+		dbPass = "root"
+	}
+
+	dsn := fmt.Sprintf("host=%v port=%v dbname=%v user=%v password=%v sslmode=disable", dbHost, dbPort, dbName, dbUser, dbPass)
 	db, err := gorm.Open(postgres.Open(dsn), &gorm.Config{})
 	if err != nil {
 		panic(err.Error())
@@ -34,10 +60,15 @@ func main() {
 	hub := socket.NewHub()
 	go hub.Run()
 
-
 	env := &handlers.Env{DB: db, Hub: hub}
 
-	gin.SetMode(gin.ReleaseMode)
+	env.PythonPath = os.Getenv("INVENTORY_PYTHON_PATH")
+	env.LabelPath = os.Getenv("INVENTORY_LABEL_PATH")
+	if env.LabelPath == "" {
+		env.LabelPath = "label/"
+	}
+
+	gin.SetMode(gin.TestMode)
 	router := gin.Default()
 
 	// This is just for testing socket stuff
@@ -46,9 +77,9 @@ func main() {
 	})
 
 	// Host react ui
-	router.Use(static.Serve("/", static.LocalFile("../ui-dist", false)))
+	router.Use(static.Serve("/", static.LocalFile("ui", false)))
 	router.NoRoute(func(c *gin.Context) {
-		c.File("../ui-dist/index.html")
+		c.File("ui/index.html")
 	})
 
 	v1 := router.Group("/v1")
@@ -71,7 +102,10 @@ func main() {
 			s.DELETE("delete/:id", storage.Delete(env))
 		}
 
-		v1.GET("label/:id", label.Generate(env))
+		v1.GET("label/part/:id", label.Print(env, "part"))
+		v1.GET("label/part/:id/preview", label.Preview(env, "part"))
+		v1.GET("label/storage/:id", label.Print(env, "storage"))
+		v1.GET("label/storage/:id/preview", label.Preview(env, "storage"))
 	}
 
 	router.GET("/ws", func(c *gin.Context) {
@@ -82,6 +116,8 @@ func main() {
 	if port == "" {
 		port = "8080"
 	}
+
+	fmt.Println("Starting server on port:", port)
 
 	if err := router.Run(":" + port); err != nil {
 		log.Panicf("error: %s", err)

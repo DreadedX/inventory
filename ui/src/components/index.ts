@@ -7,3 +7,4 @@ export { StorageView } from './StorageView';
 export { StorageEdit } from './StorageEdit';
 export { LoadingBox } from './LoadingBox';
 export { StatusBox } from './StatusBox';
+export { PrintLabel } from './PrintLabel';

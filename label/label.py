@@ -2,24 +2,43 @@
 from blabel import LabelWriter
 from pdf2image import convert_from_bytes
 from io import BytesIO
+import argparse
 import base64
 import json
-import sys
+import os
 
-if len(sys.argv) != 3:
-    print("Not correct amount of arguments")
-    exit(-1)
+parser = argparse.ArgumentParser(description="Generate and print inventory labels")
+parser.add_argument("type", help="Type of label to generate")
+parser.add_argument("data", help="Data for the label")
+parser.add_argument("--preview", action="count", default=0, help="Create a preview image")
 
-template = sys.argv[1]
+args = parser.parse_args()
 
-item_writer = LabelWriter(f"../label/{template}/template.html", default_stylesheets=(f"../label/{template}/style.css",))
+template = args.type
 
-item = json.loads(sys.argv[2])
+dirname = os.path.dirname(__file__)
+writer = LabelWriter(f"{dirname}/{template}/template.html", default_stylesheets=(f"{dirname}/{template}/style.css",))
 
-data = item_writer.write_labels([item], target='@memory')
+data = json.loads(args.data)
+
+data = writer.write_labels([data], target='@memory')
 
 pages = convert_from_bytes(data, 300)
 buffered = BytesIO()
 pages[0].save(buffered, "png")
 
-print(base64.b64encode(buffered.getvalue()).decode("ascii"))
+if (args.preview):
+    print(base64.b64encode(buffered.getvalue()).decode("ascii"))
+else:
+    backend = "linux_kernel"
+    model = "QL-700"
+    printer = "file:///dev/usb/lp0"
+    from brother_ql.conversion import convert
+    from brother_ql.backends.helpers import send
+    from brother_ql.raster import BrotherQLRaster
+    qlr = BrotherQLRaster(model)
+    qlr.exception_on_warning = True
+    instructions = convert(qlr=qlr, images=pages, cut=True, label="62")
+    send(instructions=instructions, printer_identifier=printer, backend_identifier=backend, blocking=True)
+
+    print("TEST")
