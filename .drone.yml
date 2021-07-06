@@ -3,13 +3,37 @@ type: docker
 name: default
 
 steps:
-    - name: docker
+    - name: build
       image: docker
       volumes:
           - name: socket
             path: /var/run/docker.sock
       commands:
           - docker build -t inventory .
+
+    - name: deploy
+      image: docker
+      volumes:
+          - name: socket
+            path: /var/run/docker.sock
+      environment:
+          DB_HOST:
+              from_secret: DB_HOST
+          DB_PORT:
+              from_secret: DB_PORT
+          DB_NAME:
+              from_secret: DB_NAME
+          DB_USER:
+              from_secret: DB_USER
+          DB_PASS:
+              from_secret: DB_PASS
+          DEVICE:
+              from_secret: DEVICE
+      commands:
+          - docker stop inventory
+          - docker rm inventory || true
+          - docker run -e DB_HOST=$DB_HOST -e DB_PORT=$DB_PORT -e DB_NAME=$DB_NAME -e DB_USER=$DB_USER -e DB_PASS=$DB_PASS --device $DEVICE --network postgres --name inventory -d inventory
+          - docker network connect web inventory
 
 volumes:
     - name: socket
