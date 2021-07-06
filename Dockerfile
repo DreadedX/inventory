@@ -4,7 +4,7 @@ WORKDIR /src
 COPY server/go.mod .
 COPY server/go.sum .
 
-RUN go mod download
+RUN go mod download -x
 
 COPY server .
 RUN go build

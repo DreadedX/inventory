@@ -1,0 +1,17 @@
+kind: pipeline
+type: docker
+name: default
+
+steps:
+    - name: docker
+      image: docker
+      volumes:
+          - name: socket
+            path: /var/run/docker.sock
+      commands:
+          - docker build -t inventory .
+
+volumes:
+    - name: socket
+      host:
+          path: /var/run/docker.sock
