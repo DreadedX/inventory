@@ -2,10 +2,12 @@ package part
 
 import (
 	"net/http"
+	"sort"
 
 	"github.com/btcsuite/btcutil/base58"
 	"github.com/gin-gonic/gin"
 	"github.com/google/uuid"
+	"github.com/lithammer/fuzzysearch/fuzzy"
 
 	"inventory/handlers"
 	"inventory/models"
@@ -13,9 +15,34 @@ import (
 
 func FetchAll(env *handlers.Env) gin.HandlerFunc {
 	return func(c *gin.Context) {
+		search := c.Param("search")
+		// @todo This does not properly deal with unicode
+		search = search[1:]
+
 		var parts []models.Part
 
-		env.DB.Joins("Storage").Find(&parts)
+		env.DB.Order("name ASC").Joins("Storage").Find(&parts)
+
+		if len(search) > 0 {
+			var values []string
+			for _, part := range parts {
+				v := part.Name + " " + part.Description + " " + part.Footprint
+				if part.Storage != nil {
+					v += part.Storage.Name
+				}
+				values = append(values, v)
+			}
+			ranks := fuzzy.RankFindNormalizedFold(search, values)
+
+			sort.Sort(ranks)
+
+			var temp []models.Part
+			for _, rank := range ranks {
+				temp = append(temp, parts[rank.OriginalIndex])
+			}
+			parts = temp
+		}
+
 		if len(parts) <= 0 {
 			c.JSON(http.StatusNotFound, gin.H{"message": "No parts found!"})
 			return

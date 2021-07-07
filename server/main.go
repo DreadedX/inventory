@@ -86,7 +86,7 @@ func main() {
 	{
 		p := v1.Group("part")
 		{
-			p.GET("list", part.FetchAll(env))
+			p.GET("list/*search", part.FetchAll(env))
 			p.GET("get/:id", part.Fetch(env))
 			p.POST("create", part.Create(env))
 			p.PUT("update/:id", part.Update(env))

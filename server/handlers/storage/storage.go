@@ -6,6 +6,7 @@ import (
 	"github.com/btcsuite/btcutil/base58"
 	"github.com/gin-gonic/gin"
 	"github.com/google/uuid"
+	"gorm.io/gorm"
 
 	"inventory/handlers"
 	"inventory/models"
@@ -14,7 +15,7 @@ import (
 func FetchAll(env *handlers.Env) gin.HandlerFunc {
 	return func(c *gin.Context) {
 		var storages []models.Storage
-		env.DB.Find(&storages)
+		env.DB.Order("name ASC").Find(&storages)
 
 		if len(storages) <= 0 {
 			c.JSON(http.StatusNotFound, gin.H{"message": "No storage found!"})
@@ -41,7 +42,9 @@ func Fetch(env *handlers.Env) gin.HandlerFunc {
 		}
 
 		var storage models.Storage
-		env.DB.Preload("Parts").First(&storage, id)
+		env.DB.Preload("Parts", func(db *gorm.DB) *gorm.DB {
+			return db.Order("parts.name ASC")
+		}).First(&storage, id)
 		Nil := models.ID{uuid.Nil}
 		if storage.ID == Nil {
 			c.JSON(http.StatusNotFound, gin.H{"message": "No storage found!"})
