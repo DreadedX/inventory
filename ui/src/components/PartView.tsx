@@ -1,5 +1,5 @@
 import { FC, Fragment, useState, useEffect } from 'react';
-import { useHistory } from 'react-router-dom';
+import { useHistory, Link } from 'react-router-dom';
 import { Segment, Form, Message, Menu, Icon, Modal, Button } from 'semantic-ui-react';
 import { PrintLabel } from './';
 import { request } from '../request';
@@ -88,7 +88,7 @@ export const PartView: FC<Props> = ({ part, edit }: Props) => {
 				</Form.Group>
 
 				<Form.Group>
-					<Field width={5} label="Storage" value={part.storage?.name}/>
+					<Field as={part.storage ? Link : undefined} to={"/storage/" + part.storage?.id} width={5} label="Storage" value={part.storage?.name}/>
 					<Field width={2} label="Quantity" value={part.quantity}/>
 				</Form.Group>
 
