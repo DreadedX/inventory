@@ -21,6 +21,7 @@ img {
 	font-weight: bold;
 	font-size: 15px;
 	line-height: 1;
+	width: 40.6mm;
 }
 
 .description {
@@ -28,6 +29,7 @@ img {
 	font-family: Source Code Pro;
 	font-size: 11px;
 	line-height: 0.9;
+	width: 40.6mm;
 }
 
 .footprint {
