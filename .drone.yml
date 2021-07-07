@@ -32,7 +32,8 @@ steps:
       commands:
           - docker stop inventory
           - docker rm inventory || true
-          - docker run -e DB_HOST=$DB_HOST -e DB_PORT=$DB_PORT -e DB_NAME=$DB_NAME -e DB_USER=$DB_USER -e DB_PASS=$DB_PASS --device $DEVICE --network postgres --name inventory -d inventory
+          # - docker run -e DB_HOST=$DB_HOST -e DB_PORT=$DB_PORT -e DB_NAME=$DB_NAME -e DB_USER=$DB_USER -e DB_PASS=$DB_PASS --device $DEVICE --network postgres --name inventory -d inventory
+          - docker run -e DB_HOST=$DB_HOST -e DB_PORT=$DB_PORT -e DB_NAME=$DB_NAME -e DB_USER=$DB_USER -e DB_PASS=$DB_PASS --network postgres --name inventory -d inventory
           - docker network connect web inventory
 
 volumes:
