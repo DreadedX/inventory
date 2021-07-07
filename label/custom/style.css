@@ -1,0 +1,13 @@
+@page {
+	width: 62mm;
+	height: 20mm;
+}
+
+.name {
+	font-family: Source Code Pro;
+	font-weight: bold;
+	font-size: 60px;
+	text-align: center;
+	width: 62mm;
+	height: 20mm;
+}

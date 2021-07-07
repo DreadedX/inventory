@@ -87,6 +87,27 @@ func PreviewStorage(env *handlers.Env) gin.HandlerFunc {
 	}
 }
 
+func PreviewCustom(env *handlers.Env) gin.HandlerFunc {
+	return func(c *gin.Context) {
+		name := c.Param("name")
+
+		cmd := exec.Command(env.PythonPath + "python", env.LabelPath + "label.py", "--preview", "custom", "{\"name\":\"" + name + "\"}")
+		png64, err := cmd.CombinedOutput()
+		if err != nil {
+			c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+			return
+		}
+
+		png, err := base64.StdEncoding.Strict().DecodeString(string(png64))
+		if err != nil {
+			c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+			return
+		}
+
+		c.Data(http.StatusOK, "image/png", png)
+	}
+}
+
 func PrintPart(env *handlers.Env) gin.HandlerFunc {
 	return func(c *gin.Context) {
 		idString := c.Param("id")
@@ -147,3 +168,17 @@ func PrintStorage(env *handlers.Env) gin.HandlerFunc {
 	}
 }
 
+func PrintCustom(env *handlers.Env) gin.HandlerFunc {
+	return func(c *gin.Context) {
+		name := c.Param("name")
+
+		cmd := exec.Command(env.PythonPath + "python", env.LabelPath + "label.py", "custom", "{\"name\":\"" + name + "\"}")
+		_, err := cmd.Output()
+		if err != nil {
+			c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+			return
+		}
+
+		c.Status(http.StatusOK)
+	}
+}
