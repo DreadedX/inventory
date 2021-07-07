@@ -16,10 +16,7 @@ export const PartCreate: FC = () => {
 		description: "",
 		footprint: "",
 		quantity: 0,
-		storage: {
-			id: id || "",
-			name: ""
-		}
+		storageID: id
 	});
 
 	return (<Container style={{ margin: "3em" }}>
