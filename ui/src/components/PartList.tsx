@@ -1,6 +1,7 @@
 import { FC } from 'react';
 import { useHistory } from "react-router-dom";
 import { Table } from 'semantic-ui-react';
+import TextTruncate from 'react-text-truncate';
 
 interface Props {
 	parts: ApiPart[]
@@ -24,7 +25,7 @@ const Item: FC<ItemProps> = ({ part, storage }) => {
 			{part.name}
 		</Table.Cell>
 		<Table.Cell>
-			{part.description}
+			<TextTruncate text={part.description} />
 		</Table.Cell>
 		{!storage && <Table.Cell>
 			{part.storage?.name}
@@ -40,7 +41,7 @@ const Item: FC<ItemProps> = ({ part, storage }) => {
 
 export const PartList: FC<Props> = ({ parts, storage=false }: Props) => {
 	return (
-		<Table unstackable selectable attached={storage ? "bottom" : undefined}>
+		<Table basic unstackable selectable attached={storage ? "bottom" : undefined}>
 			<Table.Header>
 				<Table.Row>
 					<Table.HeaderCell width={4}>Name</Table.HeaderCell>

@@ -1,6 +1,6 @@
 import { FC, useState, useEffect, MutableRefObject, ChangeEvent } from 'react';
 import { Link, useLocation, useHistory } from 'react-router-dom';
-import { Container, Button, Input, Grid } from 'semantic-ui-react';
+import { Container, Button, Input, Grid, Pagination, PaginationProps } from 'semantic-ui-react';
 import { PartList, LoadingBox, StatusBox } from '../components';
 import { request } from '../request';
 
@@ -12,15 +12,18 @@ const useQuery = () => {
 	return new URLSearchParams(useLocation().search)
 }
 
+const listLength = 10;
+
 export const Parts: FC<Props> = ( { ws }: Props ) => {
 	const query = useQuery();
 	const history = useHistory();
 
-	const [parts, setParts] = useState<ApiPart[]>([]);
+	const [ parts, setParts ] = useState<ApiPart[]>([]);
 	const [ search, setSearch ] = useState(query.get("search") || "");
 	const [ loading, setLoading ] = useState<boolean>(true);
 	const [ searching, setSearching ] = useState<boolean>(false);
-	const [status, setStatus] = useState<JSX.Element>();
+	const [ page, setPage ] = useState<number>(Number(query.get("page")) || 1);
+	const [ status, setStatus ] = useState<JSX.Element>();
 
 	const update = (search: string) => {
 		request<ApiPart[]>("v1/part/list/" + search)
@@ -52,6 +55,11 @@ export const Parts: FC<Props> = ( { ws }: Props ) => {
 		history.replace({search: event.target.value ? "?search="+event.target.value : ""})
 	}
 
+	const handlePageChange = ({}, data: PaginationProps) => {
+		setPage(Math.ceil(Number(data.activePage)) || 1)
+		console.log(data.activePage)
+	}
+
 	useEffect(() => {
 		if (ws.current)  {
 			ws.current.onmessage = () => {
@@ -67,13 +75,14 @@ export const Parts: FC<Props> = ( { ws }: Props ) => {
 	}, [ws, search]);
 
 	return (
-			<Container style={{ margin: "3em" }}>
+			<Container style={{ margin: "3em" }} textAlign="center">
 				<Grid>
-					<Grid.Column width={14}><Input style={{ width: '100%' }} icon="search" loading={searching} type="search" value={search} placeholder="Search..." onChange={handleSearch}/></Grid.Column>
-					<Grid.Column width={2}><Button style={{ height: '100%' }} basic icon="add" as={Link} to="/part/create" floated="right" /></Grid.Column>
+					<Grid.Column stretched computer={5} mobile={14}><Input icon="search" loading={searching} type="search" value={search} placeholder="Search..." onChange={handleSearch}/></Grid.Column>
+					<Grid.Column floated="right"><Button style={{height: '100%'}} basic icon="add" as={Link} to="/part/create" floated="right" /></Grid.Column>
 				</Grid>
 				{ status || <LoadingBox loading={ loading }>
-					<PartList parts={ parts } />
+					<PartList parts={ parts.slice(listLength*(page-1), listLength*page) } />
+					{ parts.length > listLength && <Pagination style={{ alignItems: 'center' }} activePage={page} totalPages={parts.length / listLength} onPageChange={handlePageChange} />}
 				</LoadingBox>}
 			</Container>
 	);
