@@ -11,16 +11,20 @@ export const PrintLabel: FC<Props & Record<string, any>> = ({ id, type, ...props
 	const [ open, setOpen ] = useState(false);
 	const [ previewOpen, setPreviewOpen ] = useState(false);
 	const [ status, setStatus ] = useState<JSX.Element>();
+	const [ printing, setPrinting ] = useState<boolean>(false);
 
 	const print = () => {
+		setPrinting(true);
 		requestStatus("/v1/label/" + type + "/" + id, {method: "GET"})
 			.then(response => {
 				console.log(response);
 				setOpen(false);
+				setPrinting(false);
 			})
 			.catch(error => {
 				console.log(error);
 				setStatus(<Message error>Unable to print!</Message>);
+				setPrinting(false);
 			})
 	}
 
@@ -47,7 +51,7 @@ export const PrintLabel: FC<Props & Record<string, any>> = ({ id, type, ...props
 			<Modal basic onClose={() => setPreviewOpen(false)} onOpen={() => setPreviewOpen(true)} open={previewOpen} trigger={trigger}>
 				<img width="100%" src={"/v1/label/" + type + "/" + id + "/preview"} alt="Preview of the label" />
 			</Modal>
-			<Button disabled={status ? true : false} content="Print" color="green" icon="print" onClick={print} />
+			<Button loading={printing} disabled={status ? true : false} content="Print" color="green" icon="print" onClick={print} />
 		</Modal.Actions>
 	</Modal>)
 }
