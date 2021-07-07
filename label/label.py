@@ -11,6 +11,7 @@ parser = argparse.ArgumentParser(description="Generate and print inventory label
 parser.add_argument("type", help="Type of label to generate")
 parser.add_argument("data", help="Data for the label")
 parser.add_argument("--preview", action="count", default=0, help="Create a preview image")
+parser.add_argument("--debug", action="count", default=0, help="Preview labels during development")
 
 args = parser.parse_args()
 
@@ -27,7 +28,10 @@ pages = convert_from_bytes(data, 300)
 buffered = BytesIO()
 pages[0].save(buffered, "png")
 
-if (args.preview):
+if (args.debug):
+    pages[0].show()
+    pass
+elif (args.preview):
     print(base64.b64encode(buffered.getvalue()).decode("ascii"))
 else:
     backend = "linux_kernel"
