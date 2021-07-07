@@ -15,11 +15,11 @@ import (
 	"inventory/models"
 )
 
-func Print(env *handlers.Env, t string) gin.HandlerFunc {
+func PreviewPart(env *handlers.Env) gin.HandlerFunc {
 	return func(c *gin.Context) {
-		partID := c.Param("id")
+		idString := c.Param("id")
 
-		id, err := uuid.FromBytes(base58.Decode(partID))
+		id, err := uuid.FromBytes(base58.Decode(idString))
 		if err != nil {
 			c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
 			return
@@ -34,37 +34,7 @@ func Print(env *handlers.Env, t string) gin.HandlerFunc {
 			return
 		}
 
-		cmd := exec.Command(env.PythonPath + "python", env.LabelPath + "label.py", t, string(j))
-		_, err = cmd.Output()
-		if err != nil {
-			c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
-			return
-		}
-
-		c.Status(http.StatusOK)
-	}
-}
-
-func Preview(env *handlers.Env, t string) gin.HandlerFunc {
-	return func(c *gin.Context) {
-		partID := c.Param("id")
-
-		id, err := uuid.FromBytes(base58.Decode(partID))
-		if err != nil {
-			c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
-			return
-		}
-
-		var part models.Part
-		env.DB.First(&part, id)
-
-		j, err := json.Marshal(part)
-		if err != nil {
-			c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
-			return
-		}
-
-		cmd := exec.Command(env.PythonPath + "python", env.LabelPath + "label.py", "--preview", t, string(j))
+		cmd := exec.Command(env.PythonPath + "python", env.LabelPath + "label.py", "--preview", "part", string(j))
 		png64, err := cmd.CombinedOutput()
 		if err != nil {
 			c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
@@ -80,3 +50,100 @@ func Preview(env *handlers.Env, t string) gin.HandlerFunc {
 		c.Data(http.StatusOK, "image/png", png)
 	}
 }
+
+func PreviewStorage(env *handlers.Env) gin.HandlerFunc {
+	return func(c *gin.Context) {
+		idString := c.Param("id")
+
+		id, err := uuid.FromBytes(base58.Decode(idString))
+		if err != nil {
+			c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+			return
+		}
+
+		var storage models.Storage
+		env.DB.First(&storage, id)
+
+		j, err := json.Marshal(storage)
+		if err != nil {
+			c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+			return
+		}
+
+		cmd := exec.Command(env.PythonPath + "python", env.LabelPath + "label.py", "--preview", "storage", string(j))
+		png64, err := cmd.CombinedOutput()
+		if err != nil {
+			c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+			return
+		}
+
+		png, err := base64.StdEncoding.Strict().DecodeString(string(png64))
+		if err != nil {
+			c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+			return
+		}
+
+		c.Data(http.StatusOK, "image/png", png)
+	}
+}
+
+func PrintPart(env *handlers.Env) gin.HandlerFunc {
+	return func(c *gin.Context) {
+		idString := c.Param("id")
+
+		id, err := uuid.FromBytes(base58.Decode(idString))
+		if err != nil {
+			c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+			return
+		}
+
+		var part models.Part
+		env.DB.First(&part, id)
+
+		j, err := json.Marshal(part)
+		if err != nil {
+			c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+			return
+		}
+
+		cmd := exec.Command(env.PythonPath + "python", env.LabelPath + "label.py", "part", string(j))
+		_, err = cmd.Output()
+		if err != nil {
+			c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+			return
+		}
+
+		c.Status(http.StatusOK)
+	}
+}
+
+func PrintStorage(env *handlers.Env) gin.HandlerFunc {
+	return func(c *gin.Context) {
+		idString := c.Param("id")
+
+		id, err := uuid.FromBytes(base58.Decode(idString))
+		if err != nil {
+			c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+			return
+		}
+
+		var storage models.Storage
+		env.DB.First(&storage, id)
+
+		j, err := json.Marshal(storage)
+		if err != nil {
+			c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+			return
+		}
+
+		cmd := exec.Command(env.PythonPath + "python", env.LabelPath + "label.py", "storage", string(j))
+		_, err = cmd.Output()
+		if err != nil {
+			c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+			return
+		}
+
+		c.Status(http.StatusOK)
+	}
+}
+

@@ -102,10 +102,10 @@ func main() {
 			s.DELETE("delete/:id", storage.Delete(env))
 		}
 
-		v1.GET("label/part/:id", label.Print(env, "part"))
-		v1.GET("label/part/:id/preview", label.Preview(env, "part"))
-		v1.GET("label/storage/:id", label.Print(env, "storage"))
-		v1.GET("label/storage/:id/preview", label.Preview(env, "storage"))
+		v1.GET("label/part/:id", label.PrintPart(env))
+		v1.GET("label/part/:id/preview", label.PreviewPart(env))
+		v1.GET("label/storage/:id", label.PrintStorage(env))
+		v1.GET("label/storage/:id/preview", label.PreviewStorage(env))
 	}
 
 	router.GET("/ws", func(c *gin.Context) {

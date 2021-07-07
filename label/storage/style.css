@@ -1,0 +1,35 @@
+@page {
+	width: 62mm;
+	height: 20mm;
+}
+
+img {
+	height: 20mm;
+	display: inline-block;
+	vertical-align: middle;
+	image-rendering: pixelated;
+}
+
+.label {
+	margin-top: -0.65mm;
+	vertical-align: top;
+	display: inline-block;
+}
+
+.name {
+	font-family: Source Code Pro;
+	font-weight: bold;
+	font-size: 42px;
+	line-height: 1;
+}
+
+.id {
+	margin-top: -0.1mm;
+	margin-left: -1.1mm;
+	padding: 0;
+	padding-left: 1mm;
+	font-family: Source Code Pro;
+	font-size: 7px;
+	position: absolute;
+	bottom: 0mm;
+}
