@@ -1,5 +1,5 @@
 import { FC, Fragment, useState, useEffect } from 'react';
-import { useHistory } from 'react-router-dom';
+import { useHistory, Link } from 'react-router-dom';
 import { Message, Menu, Icon, Modal, Button } from 'semantic-ui-react';
 import { PartList, PrintLabel} from './';
 import { request } from '../request';
@@ -48,7 +48,10 @@ export const StorageView: FC<Props> = ({ storage, edit }: Props) => {
 			<Menu.Item header style={{marginLeft: '0.5em'}}>
 				{storage.name}
 			</Menu.Item>
-			<PrintLabel id={storage.id} type="storage" trigger={<Menu.Item position="right"><Icon name="print" /></Menu.Item>} />
+			<Menu.Item position="right" as={Link} to={"/part/create/" + storage.id}>
+				<Icon name="add" />
+			</Menu.Item>
+			<PrintLabel id={storage.id} type="storage" trigger={<Menu.Item><Icon name="print" /></Menu.Item>} />
 			<Menu.Item onClick={() => history.replace(edit)}>
 				<Icon name="edit" />
 			</Menu.Item>

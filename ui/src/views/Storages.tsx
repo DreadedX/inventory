@@ -1,6 +1,6 @@
 import { FC, useState, useEffect, MutableRefObject } from 'react';
 import { Link } from 'react-router-dom';
-import { Container, Button } from 'semantic-ui-react';
+import { Container, Button, Grid } from 'semantic-ui-react';
 import { StorageList, LoadingBox, StatusBox } from '../components';
 import { request } from '../request';
 
@@ -47,10 +47,12 @@ export const Storages: FC<Props> = ({ ws }: Props) => {
 
 	return (
 			<Container style={{ margin: "3em" }}>
+				<Grid>
+					<Grid.Column floated="right"><Button style={{height: '100%'}} basic icon="add" as={Link} to="/storage/create" floated="right" /></Grid.Column>
+				</Grid>
 				{ status || <LoadingBox loading={ loading }>
 					<StorageList storage={ storage }/>
 				</LoadingBox>}
-				<Button basic icon="add" as={Link} to="/storage/create" floated="right" />
 			</Container>
 	);
 };

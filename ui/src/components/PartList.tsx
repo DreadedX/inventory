@@ -41,7 +41,7 @@ const Item: FC<ItemProps> = ({ part, storage }) => {
 
 export const PartList: FC<Props> = ({ parts, storage=false }: Props) => {
 	return (
-		<Table basic unstackable selectable attached={storage ? "bottom" : undefined}>
+		<Table unstackable selectable attached={storage ? "bottom" : undefined}>
 			<Table.Header>
 				<Table.Row>
 					<Table.HeaderCell width={4}>Name</Table.HeaderCell>

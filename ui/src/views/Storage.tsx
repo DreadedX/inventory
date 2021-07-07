@@ -1,7 +1,7 @@
 import { FC, useState, useEffect, MutableRefObject } from 'react';
-import { useParams, Switch, Route, Link, useRouteMatch } from 'react-router-dom';
+import { useParams, Switch, Route, useRouteMatch } from 'react-router-dom';
 import { request } from '../request';
-import { Container, Button } from 'semantic-ui-react';
+import { Container } from 'semantic-ui-react';
 import { LoadingBox, StorageView, StorageEdit, StatusBox } from '../components';
 
 interface Params {
@@ -58,7 +58,6 @@ export const Storage: FC<Props> = ({ ws }: Props) => {
 			<Switch>
 				<Route exact path={path}>
 					<StorageView storage={ storage as ApiStorage } edit={url + "/edit"} />
-					<Button basic icon="add" as={Link} to={"/part/create/" + id} floated="right" />
 				</Route>
 				<Route exact path={path + "/edit"}>
 					<StorageEdit storage={ storage as ApiStorage } setStorage={setStorage}/>
