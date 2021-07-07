@@ -39,15 +39,3 @@ services:
         environment:
             CONSOLE_MINIO_SERVER: http://storage:9000
         command: server
-
-    inventory:
-        image: inventory
-        ports:
-            - "8081:8081"
-        restart: on-failure
-        volumes:
-            - /dev/usb/lp0:/dev/usb/lp0
-        environment:
-            PORT: 8081
-            DB_HOST: "db"
-        privileged: true
