@@ -15,6 +15,7 @@ export const PrintLabel: FC<Props & Record<string, any>> = ({ id, type, ...props
 
 	const print = () => {
 		setPrinting(true);
+		setStatus(<Message>Printing...</Message>);
 		requestStatus("/v1/label/" + type + "/" + id, {method: "GET"})
 			.then(response => {
 				console.log(response);
@@ -46,12 +47,15 @@ export const PrintLabel: FC<Props & Record<string, any>> = ({ id, type, ...props
 			{ status || "Do you want to print out a label?" }
 		</Modal.Content>
 		<Modal.Actions>
-			<Button content="Cancel" color="black" onClick={() => setOpen(false)} />
+			<Button content="Cancel" color="black" onClick={() => {
+				setOpen(false)
+				setStatus(undefined)
+			}} />
 			{/* @todo Add closeIcon in the proper place*/}
 			<Modal basic onClose={() => setPreviewOpen(false)} onOpen={() => setPreviewOpen(true)} open={previewOpen} trigger={trigger}>
 				<img width="100%" src={"/v1/label/" + type + "/" + id + "/preview"} alt="Preview of the label" />
 			</Modal>
-			<Button loading={printing} disabled={status ? true : false} content="Print" color="green" icon="print" onClick={print} />
+			<Button loading={printing} disabled={printing} content="Print" color="green" icon="print" onClick={print} />
 		</Modal.Actions>
 	</Modal>)
 }
