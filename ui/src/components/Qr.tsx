@@ -30,7 +30,7 @@ export const Qr: FC<Props> = ({ trigger, onScan}: Props) => {
 	}
 
 	return (
-		<Modal basic onClose={() => setOpen(false)} onOpen={() => setOpen(true)} open={open} trigger={trigger}>
+		<Modal closeIcon basic onClose={() => setOpen(false)} onOpen={() => setOpen(true)} open={open} trigger={trigger}>
 			<QrReader constraints={{facingMode: 'environment'}} onResult={onResult}/>
 		</Modal>
 	)
