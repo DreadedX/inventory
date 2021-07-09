@@ -1,19 +1,15 @@
-import { FC, useState, useEffect, MutableRefObject } from 'react';
+import { FC, useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import { Container, Button, Grid } from 'semantic-ui-react';
 import { StorageList, LoadingBox, StatusBox } from '../components';
 import { request } from '../request';
 
-interface Props {
-	ws: MutableRefObject<WebSocket | undefined>
-}
-
-export const Storages: FC<Props> = ({ ws }: Props) => {
+export const Storages: FC = () => {
 	const [storage, setStorage] = useState<ApiStorage[]>([]);
 	const [loading, setLoading] = useState<boolean>(true);
 	const [status, setStatus] = useState<JSX.Element>();
 
-	const update = () => {
+	useEffect(() => {
 		request<ApiStorage[]>("v1/storage/list")
 			.then(response => {
 				if (response.data) {
@@ -29,21 +25,7 @@ export const Storages: FC<Props> = ({ ws }: Props) => {
 				setLoading(false);
 				setStatus(<StatusBox icon="times" message={ error.message }/>)
 			});
-	}
-
-	useEffect(update, []);
-
-	useEffect(() => {
-		if (ws.current)  {
-			ws.current.onmessage = update;
-		}
-
-		return () => {
-			if (ws.current) {
-				ws.current.onmessage = null;
-			}
-		}
-	}, [ws]);
+	}, []);
 
 	return (
 			<Container style={{ margin: "3em" }}>

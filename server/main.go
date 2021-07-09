@@ -15,7 +15,6 @@ import (
 	"inventory/handlers/part"
 	"inventory/handlers/storage"
 	"inventory/models"
-	"inventory/socket"
 )
 
 func Migrate(db *gorm.DB) {
@@ -57,10 +56,7 @@ func main() {
 	}
 	Migrate(db)
 
-	hub := socket.NewHub()
-	go hub.Run()
-
-	env := &handlers.Env{DB: db, Hub: hub}
+	env := &handlers.Env{DB: db}
 
 	env.PythonPath = os.Getenv("INVENTORY_PYTHON_PATH")
 	env.LabelPath = os.Getenv("INVENTORY_LABEL_PATH")
@@ -70,11 +66,6 @@ func main() {
 
 	gin.SetMode(gin.TestMode)
 	router := gin.Default()
-
-	// This is just for testing socket stuff
-	router.GET("/socket", func(c *gin.Context) {
-		c.File("../socket.html")
-	})
 
 	// Host react ui
 	router.Use(static.Serve("/", static.LocalFile("ui", false)))
@@ -112,10 +103,6 @@ func main() {
 			l.GET("custom/:name/preview", label.PreviewCustom(env))
 		}
 	}
-
-	router.GET("/ws", func(c *gin.Context) {
-		socket.ServeWs(hub, c.Writer, c.Request)
-	})
 
 	port := os.Getenv("PORT")
 	if port == "" {

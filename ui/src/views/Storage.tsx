@@ -1,4 +1,4 @@
-import { FC, useState, useEffect, MutableRefObject } from 'react';
+import { FC, useState, useEffect } from 'react';
 import { useParams, Switch, Route, useRouteMatch } from 'react-router-dom';
 import { request } from '../request';
 import { Container } from 'semantic-ui-react';
@@ -8,18 +8,14 @@ interface Params {
 	id: string
 }
 
-interface Props {
-	ws: MutableRefObject<WebSocket | undefined>
-}
-
-export const Storage: FC<Props> = ({ ws }: Props) => {
+export const Storage: FC = () => {
 	const { id } = useParams<Params>();
 	const { path, url } = useRouteMatch();
 
 	const [storage, setStorage] = useState<ApiStorage>();
 	const [status, setStatus] = useState<JSX.Element>();
 
-	const update = (id: string) => {
+	useEffect(() => {
 		request<ApiStorage>("/v1/storage/get/" + id)
 			.then(response => {
 				if (response.data) {
@@ -32,26 +28,7 @@ export const Storage: FC<Props> = ({ ws }: Props) => {
 				console.error(error)
 				setStatus(<StatusBox icon="times" message={ error.message }/>)
 			});
-	};
-
-	useEffect(() => {
-		update(id);
 	}, [id]);
-
-	useEffect(() => {
-		if (ws.current)  {
-			ws.current.onmessage = () => {
-				// @todo If the user is in edit mode, show a warning if the part has changed
-				update(id)
-			};
-		}
-
-		return () => {
-			if (ws.current) {
-				ws.current.onmessage = null;
-			}
-		}
-	}, [ws, id]);
 
 	return (<Container style={{ margin: "3em" }}>
 		{ status || <LoadingBox loading={ !storage }>

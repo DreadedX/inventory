@@ -1,12 +1,8 @@
-import { FC, useState, useEffect, MutableRefObject, ChangeEvent } from 'react';
+import { FC, useState, useEffect, ChangeEvent } from 'react';
 import { Link, useLocation, useHistory } from 'react-router-dom';
 import { Container, Button, Input, Grid, Pagination, PaginationProps } from 'semantic-ui-react';
 import { PartList, LoadingBox, StatusBox } from '../components';
 import { request } from '../request';
-
-interface Props {
-	ws: MutableRefObject<WebSocket | undefined>
-}
 
 const useQuery = () => {
 	return new URLSearchParams(useLocation().search)
@@ -14,7 +10,7 @@ const useQuery = () => {
 
 const listLength = 10;
 
-export const Parts: FC<Props> = ( { ws }: Props ) => {
+export const Parts: FC = () => {
 	const query = useQuery();
 	const history = useHistory();
 
@@ -25,7 +21,7 @@ export const Parts: FC<Props> = ( { ws }: Props ) => {
 	const [ page, setPage ] = useState<number>(Number(query.get("page")) || 1);
 	const [ status, setStatus ] = useState<JSX.Element>();
 
-	const update = (search: string) => {
+	useEffect(() => {
 		request<ApiPart[]>("v1/part/list/" + search)
 			.then(response => {
 				if (response.data) {
@@ -43,10 +39,6 @@ export const Parts: FC<Props> = ( { ws }: Props ) => {
 				setLoading(false);
 				setSearching(false);
 			});
-	}
-
-	useEffect(() => {
-		update(search)
 	}, [search]);
 
 	const handleSearch = (event: ChangeEvent<HTMLInputElement>) => {
@@ -59,20 +51,6 @@ export const Parts: FC<Props> = ( { ws }: Props ) => {
 		setPage(Math.ceil(Number(data.activePage)) || 1)
 		console.log(data.activePage)
 	}
-
-	useEffect(() => {
-		if (ws.current)  {
-			ws.current.onmessage = () => {
-				update(search);
-			}
-		}
-
-		return () => {
-			if (ws.current) {
-				ws.current.onmessage = null;
-			}
-		}
-	}, [ws, search]);
 
 	return (
 			<Container style={{ margin: "3em" }} textAlign="center">

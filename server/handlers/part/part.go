@@ -93,8 +93,6 @@ func Create(env *handlers.Env) gin.HandlerFunc {
 			return
 		}
 
-		env.Hub.Broadcast <- []byte("part:create")
-
 		c.JSON(http.StatusCreated, gin.H{"message": "Part created successfully!", "data": part})
 	}
 }
@@ -121,8 +119,6 @@ func Delete(env *handlers.Env) gin.HandlerFunc {
 			c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
 			return
 		}
-
-		env.Hub.Broadcast <- []byte("part:delete")
 
 		c.JSON(http.StatusOK, gin.H{"message": "Part deleted successfully!", "data": part})
 	}
@@ -186,8 +182,6 @@ func Update(env *handlers.Env) gin.HandlerFunc {
 			c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
 			return
 		}
-
-		env.Hub.Broadcast <- []byte("part:update")
 
 		// Return the updated entry
 		c.JSON(http.StatusOK, gin.H{"message": "Part updated successfully!", "data": part})
