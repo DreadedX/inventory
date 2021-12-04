@@ -1,6 +1,6 @@
 data/
 ui-dist
-label/env/
+print/env/
 tmp/
 
 # dependencies

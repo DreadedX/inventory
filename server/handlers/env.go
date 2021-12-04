@@ -7,5 +7,5 @@ import (
 type Env struct {
 	DB *gorm.DB
 	PythonPath string
-	LabelPath string
+	PrintPath string
 }

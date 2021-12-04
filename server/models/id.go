@@ -11,6 +11,12 @@ type ID struct {
 	uuid.UUID
 }
 
+// @TODO How do we handle errors here
+func (id ID) String() string {
+	data, _ := id.MarshalBinary()
+	return base58.Encode(data)
+}
+
 func (id ID) MarshalJSON() ([]byte, error) {
 	data, err := id.MarshalBinary()
 	if err != nil {

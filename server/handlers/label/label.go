@@ -1,9 +1,6 @@
 package label
 
 import (
-	"encoding/base64"
-	"encoding/json"
-
 	"net/http"
 	"os/exec"
 
@@ -28,20 +25,7 @@ func PreviewPart(env *handlers.Env) gin.HandlerFunc {
 		var part models.Part
 		env.DB.First(&part, id)
 
-		j, err := json.Marshal(part)
-		if err != nil {
-			c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
-			return
-		}
-
-		cmd := exec.Command(env.PythonPath + "python", env.LabelPath + "label.py", "--preview", "part", string(j))
-		png64, err := cmd.CombinedOutput()
-		if err != nil {
-			c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
-			return
-		}
-
-		png, err := base64.StdEncoding.Strict().DecodeString(string(png64))
+		png, err := generateLabelPart(&part)
 		if err != nil {
 			c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 			return
@@ -64,20 +48,7 @@ func PreviewStorage(env *handlers.Env) gin.HandlerFunc {
 		var storage models.Storage
 		env.DB.First(&storage, id)
 
-		j, err := json.Marshal(storage)
-		if err != nil {
-			c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
-			return
-		}
-
-		cmd := exec.Command(env.PythonPath + "python", env.LabelPath + "label.py", "--preview", "storage", string(j))
-		png64, err := cmd.CombinedOutput()
-		if err != nil {
-			c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
-			return
-		}
-
-		png, err := base64.StdEncoding.Strict().DecodeString(string(png64))
+		png, err := generateLabelStorage(&storage)
 		if err != nil {
 			c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 			return
@@ -91,14 +62,7 @@ func PreviewCustom(env *handlers.Env) gin.HandlerFunc {
 	return func(c *gin.Context) {
 		name := c.Param("name")
 
-		cmd := exec.Command(env.PythonPath + "python", env.LabelPath + "label.py", "--preview", "custom", "{\"name\":\"" + name + "\"}")
-		png64, err := cmd.CombinedOutput()
-		if err != nil {
-			c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
-			return
-		}
-
-		png, err := base64.StdEncoding.Strict().DecodeString(string(png64))
+		png, err := generateLabelCustom(name)
 		if err != nil {
 			c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 			return
@@ -106,6 +70,28 @@ func PreviewCustom(env *handlers.Env) gin.HandlerFunc {
 
 		c.Data(http.StatusOK, "image/png", png)
 	}
+}
+
+func printPNG(env *handlers.Env, png []byte) error {
+	cmd := exec.Command(env.PythonPath + "python", env.PrintPath + "print.py")
+	stdin, err := cmd.StdinPipe()
+	if err != nil {
+		return err
+	}
+
+	// @TODO Make sure we handle any error here properly
+	go func() {
+		defer stdin.Close()
+		if _, err := stdin.Write(png); err != nil {
+			return
+		}
+	}()
+
+	if err := cmd.Run(); err != nil {
+		return err
+	}
+
+	return nil
 }
 
 func PrintPart(env *handlers.Env) gin.HandlerFunc {
@@ -121,15 +107,13 @@ func PrintPart(env *handlers.Env) gin.HandlerFunc {
 		var part models.Part
 		env.DB.First(&part, id)
 
-		j, err := json.Marshal(part)
+		png, err := generateLabelPart(&part)
 		if err != nil {
-			c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+			c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 			return
 		}
 
-		cmd := exec.Command(env.PythonPath + "python", env.LabelPath + "label.py", "part", string(j))
-		_, err = cmd.Output()
-		if err != nil {
+		if err := printPNG(env, png); err != nil {
 			c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 			return
 		}
@@ -151,15 +135,13 @@ func PrintStorage(env *handlers.Env) gin.HandlerFunc {
 		var storage models.Storage
 		env.DB.First(&storage, id)
 
-		j, err := json.Marshal(storage)
+		png, err := generateLabelStorage(&storage)
 		if err != nil {
-			c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+			c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 			return
 		}
 
-		cmd := exec.Command(env.PythonPath + "python", env.LabelPath + "label.py", "storage", string(j))
-		_, err = cmd.Output()
-		if err != nil {
+		if err := printPNG(env, png); err != nil {
 			c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 			return
 		}
@@ -172,9 +154,13 @@ func PrintCustom(env *handlers.Env) gin.HandlerFunc {
 	return func(c *gin.Context) {
 		name := c.Param("name")
 
-		cmd := exec.Command(env.PythonPath + "python", env.LabelPath + "label.py", "custom", "{\"name\":\"" + name + "\"}")
-		_, err := cmd.Output()
+		png, err := generateLabelCustom(name)
 		if err != nil {
+			c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+			return
+		}
+
+		if err := printPNG(env, png); err != nil {
 			c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 			return
 		}

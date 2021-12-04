@@ -10,7 +10,7 @@ tmp_dir = "tmp"
   exclude_regex = []
   exclude_unchanged = false
   follow_symlink = false
-  full_bin = "INVENTORY_PYTHON_PATH=../label/env/bin/ INVENTORY_LABEL_PATH=../label/ ./tmp/main"
+  full_bin = "INVENTORY_PYTHON_PATH=../print/env/bin/ INVENTORY_PRINT_PATH=../print/ ./tmp/main"
   include_dir = []
   include_ext = ["go", "tpl", "tmpl", "html"]
   kill_delay = "0s"

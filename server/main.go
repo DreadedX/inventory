@@ -59,9 +59,9 @@ func main() {
 	env := &handlers.Env{DB: db}
 
 	env.PythonPath = os.Getenv("INVENTORY_PYTHON_PATH")
-	env.LabelPath = os.Getenv("INVENTORY_LABEL_PATH")
-	if env.LabelPath == "" {
-		env.LabelPath = "label/"
+	env.PrintPath = os.Getenv("INVENTORY_PRINT_PATH")
+	if env.PrintPath == "" {
+		env.PrintPath = "print/"
 	}
 
 	gin.SetMode(gin.TestMode)

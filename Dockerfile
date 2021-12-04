@@ -9,6 +9,7 @@ RUN go mod download
 COPY server .
 RUN go build
 
+
 FROM node:alpine as build-ui
 
 WORKDIR /src
@@ -19,21 +20,18 @@ RUN yarn
 COPY ui .
 RUN yarn build
 
+
 FROM python
 
-RUN apt-get update && apt-get install -y poppler-utils
-
 WORKDIR /app
-RUN mkdir -p /root/.fonts
-COPY fonts/SourceCodePro-Regular.ttf /root/.fonts
-RUN fc-cache -f /root/.fonts
 
-RUN mkdir ./label
-COPY label/requirements.txt ./label
-RUN cd ./label && pip install -r requirements.txt
+RUN mkdir ./print
+COPY print/requirements.txt ./print
+RUN cd ./print && pip install -r requirements.txt
 
-COPY label ./label
+COPY print ./print
 
+COPY --from=build-server /src/fonts fonts
 COPY --from=build-server /src/inventory .
 COPY --from=build-ui /src/build ./ui
 
