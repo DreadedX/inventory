@@ -34,6 +34,9 @@ steps:
           - docker rm inventory || true
           - docker run -e DB_HOST=$DB_HOST -e DB_PORT=$DB_PORT -e DB_NAME=$DB_NAME -e DB_USER=$DB_USER -e DB_PASS=$DB_PASS --device /dev/usb/lp0 --network postgres --name inventory -d inventory
           - docker network connect web inventory
+      when:
+        branch:
+          - master
 
 volumes:
     - name: socket
