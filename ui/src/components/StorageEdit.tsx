@@ -1,11 +1,13 @@
 import { FC, Fragment, ChangeEvent, useState } from 'react';
 import { useHistory } from 'react-router';
 import { Segment, Form, Message, Menu, Icon } from 'semantic-ui-react';
-import { request } from '../request';
+import { isTwirpError } from 'twirpscript/dist/runtime/error';
+import { Create } from '../handlers/storage/storage.pb';
+import { Storage } from '../models/models.pb';
 
 interface Props {
-	storage: ApiStorage
-	setStorage: (storage: ApiStorage) => void
+	storage: Storage
+	setStorage: (storage: Storage) => void
 	create?: boolean
 }
 
@@ -25,43 +27,38 @@ export const StorageEdit: FC<Props> = ( { storage, setStorage, create }: Props )
 	const save = () => {
 		setSaving(true);
 
-		var body = JSON.stringify({name: name});
+		const newStorage = {
+			...Storage.defaultValue(),
+			name: name
+		}
 
 		if (create) {
-			request<ApiPart>("/v1/storage/create", {method: "POST", body: body})
-				.then(response => {
-					if (response.data) {
-						console.log(response.data)
-						setStorage(response.data)
-
-						history.push("/storage/" + response.data.id)
-					} else {
-						setStatus(<Message attached="bottom" negative header="Failed to create storage" content={response.message} />)
-						setSaving(false);
-					}
-				}).catch(error => {
-					console.error(error);
-					setStatus(<Message attached="bottom" negative header="Failed to create storage" content={error.message} />)
-					setSaving(false);
-				});
+			Create(newStorage).then(resp => {
+				setStorage(resp)
+				history.push("/storage/" + resp.id.id)
+			}).catch(e => {
+				if (isTwirpError(e)) {
+					setStatus(<Message attached="bottom" negative header="Failed to create storage" content={e.msg} />)
+				} else {
+					setStatus(<Message attached="bottom" negative header="Failed to create storage" content="Unknown error occured" />)
+				}
+			}).finally(() => {
+				setSaving(false)
+			})
 		} else {
-			request<ApiPart>("/v1/storage/update/" + storage.id, {method: "PUT", body: body})
-				.then(response => {
-					if (response.data) {
-						console.log(response.data)
-						setStorage(response.data)
-
-						history.replace("/storage/" + response.data.id)
-					} else {
-						setStatus(<Message attached="bottom" negative header="Failed to save changes" content={response.message} />)
-						setSaving(false);
-					}
-				}).catch(error => {
-					console.error(error);
-					setStatus(<Message attached="bottom" negative header="Failed to save changes" content={error.message} />)
-					setSaving(false);
-				});
-			}
+			Create({...newStorage, id: storage.id}).then(resp => {
+				setStorage(resp)
+				history.push("/storage/" + resp.id.id)
+			}).catch(e => {
+				if (isTwirpError(e)) {
+					setStatus(<Message attached="bottom" negative header="Failed to save changes" content={e.msg} />)
+				} else {
+					setStatus(<Message attached="bottom" negative header="Failed to save changes" content="Unknown error occured" />)
+				}
+			}).finally(() => {
+				setSaving(false)
+			})
+		}
 	}
 
 	return (<Fragment>

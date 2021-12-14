@@ -1,0 +1,18 @@
+syntax = "proto3";
+package handlers.part;
+option go_package = "inventory/handlers/part";
+
+import "models/models.proto";
+
+service Part {
+	rpc FetchAll(FetchAllRequest) returns (FetchAllResponse);
+	rpc Fetch(models.ID) returns (models.Part);
+	rpc Create(models.Part) returns (models.Part);
+	rpc Delete(models.ID) returns (models.Part);
+	rpc Update(models.Part) returns (models.Part);
+}
+
+message FetchAllRequest {}
+message FetchAllResponse {
+	repeated models.Part parts = 1;
+}

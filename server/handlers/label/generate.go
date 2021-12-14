@@ -55,7 +55,7 @@ func convertToPNG(dc *gg.Context) ([]byte, error) {
 }
 
 func generateLabelPart(part *models.Part) ([]byte, error) {
-	id := fmt.Sprintf("p/%s", part.ID)
+	id := fmt.Sprintf("p/%s", part.Id.Id)
 	dc, err := baseLabel(id)
 	if err != nil {
 		return nil, err
@@ -98,7 +98,7 @@ func generateLabelPart(part *models.Part) ([]byte, error) {
 }
 
 func generateLabelStorage(storage *models.Storage) ([]byte, error) {
-	id := fmt.Sprintf("p/%s", storage.ID)
+	id := fmt.Sprintf("p/%s", storage.Id.Id)
 	dc, err := baseLabel(id)
 	if err != nil {
 		return nil, err

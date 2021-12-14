@@ -1,16 +1,16 @@
 root = "."
-tmp_dir = "tmp"
+tmp_dir = "bin"
 
 [build]
-  bin = "./tmp/main"
-  cmd = "go build -o ./tmp/main ."
+  bin = "./bin/main"
+  cmd = "./generate.sh && go build -o ./bin/main ."
   delay = 1000
-  exclude_dir = ["assets", "tmp", "vendor"]
-  exclude_file = []
+  exclude_dir = ["assets", "bin", "vendor", "testdata"]
+  exclude_file = ["models/models.pb.go", "handlers/part/part.pb.go", "handlers/part/part.twirp.go", "handlers/storage/storage.pb.go", "handlers/storage/storage.twirp.go"]
   exclude_regex = []
   exclude_unchanged = false
   follow_symlink = false
-  full_bin = "INVENTORY_PYTHON_PATH=../print/env/bin/ INVENTORY_PRINT_PATH=../print/ ./tmp/main"
+  full_bin = "INVENTORY_PYTHON_PATH=../print/env/bin/ INVENTORY_PRINT_PATH=../print/ ./bin/main"
   include_dir = []
   include_ext = ["go", "tpl", "tmpl", "html"]
   kill_delay = "0s"
@@ -30,3 +30,6 @@ tmp_dir = "tmp"
 
 [misc]
   clean_on_exit = false
+
+[screen]
+  clear_on_rebuild = false

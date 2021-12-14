@@ -5,6 +5,7 @@ go 1.16
 require (
 	github.com/agnivade/levenshtein v1.1.1
 	github.com/btcsuite/btcutil v1.0.2
+	github.com/favadi/protoc-go-inject-tag v1.3.0 // indirect
 	github.com/fogleman/gg v1.3.0 // indirect
 	github.com/gin-contrib/static v0.0.1
 	github.com/gin-gonic/gin v1.7.2
@@ -21,6 +22,7 @@ require (
 	github.com/mattn/go-isatty v0.0.13 // indirect
 	github.com/skip2/go-qrcode v0.0.0-20200617195104-da1b6568686e // indirect
 	github.com/stretchr/testify v1.7.0 // indirect
+	github.com/twitchtv/twirp v8.1.1+incompatible // indirect
 	github.com/ugorji/go v1.2.6 // indirect
 	golang.org/x/crypto v0.0.0-20210616213533-5ff15b29337e // indirect
 	golang.org/x/image v0.0.0-20211028202545-6944b10bf410 // indirect

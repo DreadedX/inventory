@@ -1,46 +1,66 @@
 package models
 
 import (
-	"encoding/json"
+	"database/sql/driver"
+	"fmt"
 
 	"github.com/btcsuite/btcutil/base58"
 	"github.com/google/uuid"
 )
 
-type ID struct {
-	uuid.UUID
-}
-
-// @TODO How do we handle errors here
-func (id ID) String() string {
-	data, _ := id.MarshalBinary()
-	return base58.Encode(data)
-}
-
-func (id ID) MarshalJSON() ([]byte, error) {
-	data, err := id.MarshalBinary()
-	if err != nil {
-		return nil, err
-	}
-	return json.Marshal(base58.Encode(data))
-}
-
-func (id *ID) UnmarshalJSON(data []byte) error {
-	var idString string
-	json.Unmarshal(data, &idString)
-
-	if len(idString) <= 0 {
-		*id = ID{uuid.Nil}
+func (id *ID) Scan(src interface{}) error {
+	switch src := src.(type) {
+	case nil:
 		return nil
-	}
 
-	i, err := uuid.FromBytes(base58.Decode(idString))
-	if err != nil {
-		return err
-	}
+	case string:
+		// if an empty UUID comes from a table, we return a null UUID
+		if src == "" {
+			return nil
+		}
 
-	*id = ID{i}
+		// see Parse for required string format
+		u, err := uuid.Parse(src)
+		if err != nil {
+			return fmt.Errorf("Scan: %v", err)
+		}
+
+		b, err := u.MarshalBinary()
+		if err != nil {
+			return fmt.Errorf("Scan: %v", err)
+		}
+
+		id.Id = base58.Encode(b)
+
+// 	case []byte:
+// 		// if an empty UUID comes from a table, we return a null UUID
+// 		if len(src) == 0 {
+// 			return nil
+// 		}
+
+// 		// assumes a simple slice of bytes if 16 bytes
+// 		// otherwise attempts to parse
+// 		if len(src) != 16 {
+// 			return uuid.Scan(string(src))
+// 		}
+// 		copy((*uuid)[:], src)
+
+	default:
+		return fmt.Errorf("Scan: unable to scan type %T into UUID", src)
+	}
 
 	return nil
 }
 
+
+func (id ID) Value() (driver.Value, error) {
+	uuid, err := uuid.FromBytes(base58.Decode(id.Id))
+	if err != nil {
+		return nil, err
+	}
+	return uuid.String(), nil
+}
+
+func (id ID) AsUUID() (uuid.UUID, error) {
+	return uuid.FromBytes(base58.Decode(id.Id))
+}

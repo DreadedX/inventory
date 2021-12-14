@@ -1,11 +1,13 @@
 import { FC, Fragment, useState, useEffect } from 'react';
 import { useHistory, Link } from 'react-router-dom';
 import { Message, Menu, Icon, Modal, Button } from 'semantic-ui-react';
+import { isTwirpError } from 'twirpscript/dist/runtime/error';
+import { Delete } from '../handlers/storage/storage.pb';
+import { Storage } from '../models/models.pb';
 import { PartList, PrintLabel} from './';
-import { request } from '../request';
 
 interface Props {
-	storage: ApiStorage
+	storage: Storage
 	edit: string
 };
 
@@ -27,20 +29,19 @@ export const StorageView: FC<Props> = ({ storage, edit }: Props) => {
 	const remove = () => {
 		setRemoving(true);
 		setOpen(false);
-		request<ApiStorage>("/v1/storage/delete/" + storage.id, {method: "DELETE"})
-			.then(response => {
-				if (response.data) {
-					history.goBack()
-				} else {
-					setStatus(<Message error attached={storage.parts?.length ? true : "bottom"} header="Failed to remove" content={response.message} />)
-				}
-				setRemoving(false);
-			})
-			.catch(error => {
-				console.error(error);
-				setStatus(<Message attached={storage.parts?.length ? true : "bottom"} negative header="Failed to remove" content={error.message} />)
-				setRemoving(false);
-			})
+
+		Delete(storage.id).then(() => {
+			history.goBack()
+		}).catch(e => {
+			if (isTwirpError(e)) {
+				setStatus(<Message error attached="bottom" header="Failed to remove" content={ e.msg } />)
+			} else {
+				console.error(e)
+				setStatus(<Message error attached="bottom" header="Failed to remove" content="Unknown error occured" />)
+			}
+		}).finally(() => {
+			setRemoving(false)
+		})
 	}
 
 	return (<Fragment>
@@ -48,10 +49,10 @@ export const StorageView: FC<Props> = ({ storage, edit }: Props) => {
 			<Menu.Item header style={{marginLeft: '0.5em'}}>
 				{storage.name}
 			</Menu.Item>
-			<Menu.Item position="right" as={Link} to={"/part/create/" + storage.id}>
+			<Menu.Item position="right" as={Link} to={"/part/create/" + storage.id.id}>
 				<Icon name="add" />
 			</Menu.Item>
-			<PrintLabel id={storage.id} type="storage" trigger={<Menu.Item><Icon name="print" /></Menu.Item>} />
+			<PrintLabel id={storage.id.id} type="storage" trigger={<Menu.Item><Icon name="print" /></Menu.Item>} />
 			<Menu.Item onClick={() => history.replace(edit)}>
 				<Icon name="edit" />
 			</Menu.Item>

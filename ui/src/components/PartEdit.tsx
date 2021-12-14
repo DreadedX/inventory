@@ -2,12 +2,15 @@ import { FC, Fragment, ChangeEvent, SyntheticEvent, KeyboardEvent, useState, use
 import { useHistory } from 'react-router';
 import { Segment, Form, Message, DropdownProps, DropdownItemProps, Menu, Icon, Input, Button } from 'semantic-ui-react';
 import TextareaAutosize from 'react-textarea-autosize';
-import { request } from '../request';
 import { Qr } from '../components/Qr';
+import { ID, Link, Part, Storage } from '../models/models.pb';
+import { Create as CreateStorage, FetchAll } from '../handlers/storage/storage.pb';
+import { isTwirpError } from 'twirpscript/dist/runtime/error';
+import { Create, Update } from '../handlers/part/part.pb';
 
 interface Props {
-	part: ApiPart
-	setPart: (part: ApiPart) => void
+	part: Part
+	setPart: (part: Part) => void
 	create?: boolean
 }
 
@@ -16,8 +19,8 @@ export const PartEdit: FC<Props> = ( { part, setPart, create }: Props ) => {
 	const [ description, setDescription ] = useState<string>(part.description);
 	const [ footprint, setFootprint ] = useState<string>(part.footprint);
 	const [ quantity, setQuantity ] = useState<number>(part.quantity);
-	const [ storageID, setStorageID ] = useState<string>(part.storageID || "");
-	const [ links, setLinks ] = useState<ApiLink[]>(part.links || []);
+	const [ storageID, setStorageID ] = useState<ID>(part.storageId || "");
+	const [ links, setLinks ] = useState<Link[]>(part.links || []);
 
 	const [ storage, setStorage ] = useState<DropdownItemProps[]>([]);
 
@@ -29,22 +32,25 @@ export const PartEdit: FC<Props> = ( { part, setPart, create }: Props ) => {
 	const history = useHistory();
 
 	useEffect(() => {
-		request<ApiStorage[]>("/v1/storage/list")
-			.then(response => {
-				if (response.data) {
-					setStorage(response.data.map((storage) => {
-						return {
-						key: storage.id,
-						value: storage.id,
-						text: storage.name
-					}}))
+		FetchAll({}).then(resp => {
+			setStorage(resp.storages.map((storage) => {
+				return {
+					key: storage.id.id,
+					value: storage.id.id,
+					text: storage.name
+				}}))
+		}).catch(e => {
+			if (isTwirpError(e)) {
+				if (e.code !== "not_found") {
+					setStatus(<Message attached="bottom" negative header="Failed to load storage options" content={ e.msg } />)
 				}
-				setLoading(false);
-			}).catch(error => {
-				console.error(error);
-				setStatus(<Message attached="bottom" negative header="Failed to load storage options" content={error.message} />)
-				setLoading(false);
-			});
+			} else {
+				console.error(e)
+				setStatus(<Message attached="bottom" negative header="Failed to load storage options" content="Unknown error occured" />)
+			}
+		}).finally(() => {
+			setLoading(false);
+		})
 	}, []);
 
 	const handleChange = (event: ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
@@ -60,11 +66,11 @@ export const PartEdit: FC<Props> = ( { part, setPart, create }: Props ) => {
 	}
 
 	const handleChangeDropdown = (_event: SyntheticEvent<HTMLElement, Event>, data: DropdownProps) => {
-		setStorageID(String(data.value));
+		setStorageID({id: String(data.value)});
 	}
 
 	const handleChangeUrl = (event: ChangeEvent<HTMLInputElement>, index: number) => {
-		var ls: ApiLink[] = [...links];
+		var ls: Link[] = [...links];
 		ls[index].url = event.target.value.replace(/^\/\/|^.*?:(\/\/)?/, '');
 		setLinks(ls)
 	}
@@ -72,30 +78,26 @@ export const PartEdit: FC<Props> = ( { part, setPart, create }: Props ) => {
 	const addStorage = (_event: KeyboardEvent<HTMLElement>, data: DropdownProps) => {
 		setLoading(true)
 
-		request<Storage>("/v1/storage/create", {method: "POST", body: JSON.stringify({name: data.value})})
-			.then(response => {
-				if (response.data) {
-					setStorage([...storage, {
-						key: response.data.id,
-						value: response.data.id,
-						text: response.data.name
-					}]);
+		CreateStorage({...Storage.defaultValue(), name: String(data.value)}).then(resp => {
+			setStorage([...storage, {
+				key: resp.id.id,
+				value: resp.id.id,
+				text: resp.name
+			}]);
 
-					setStorageID(response.data.id);
-				}
-
-				setLoading(false);
-			}).catch(error => {
-				console.error(error);
-				// @todo Show a popup message here
-				// setStatus(<StatusBox icon="times" message={ error.message }/>)
-				setLoading(false);
-			});
+			setStorageID({id: resp.id.id});
+		}).catch(e => {
+			console.error(e);
+			// @todo Show a popup message here
+			// setStatus(<StatusBox icon="times" message={ error.message }/>)
+		}).finally(() => {
+			setLoading(false);
+		})
 	}
 
 	const addUrl = () => {
-		var ls: ApiLink[] = [...links];
-		ls.push({id: 0, url: "", partID: ""});
+		var ls: Link[] = [...links];
+		ls.push(Link.defaultValue());
 		setLinks(ls)
 	}
 
@@ -108,47 +110,50 @@ export const PartEdit: FC<Props> = ( { part, setPart, create }: Props ) => {
 	const save = () => {
 		setSaving(true);
 
-		let body = JSON.stringify({name: name, description: description, footprint: footprint, quantity: quantity, storageID: storageID || null, links: links});
-		console.log(body)
+		const newPart = {
+			...Part.defaultValue(),
+			name: name,
+			description: description,
+			footprint: footprint,
+			quantity: quantity,
+			storageId: storageID,
+			links: links
+		}
+
+		console.log(newPart)
 
 		if (create) {
-			request<ApiPart>("/v1/part/create", {method: "POST", body: body})
-				.then(response => {
-					if (response.data) {
-						setPart(response.data)
-
-						history.push("/part/" + response.data.id)
-					} else {
-						setStatus(<Message attached="bottom" negative header="Failed to create part" content={response.message} />)
-						setSaving(false);
-					}
-				}).catch(error => {
-					console.error(error);
-					setStatus(<Message attached="bottom" negative header="Failed to create part" content={error.message} />)
-					setSaving(false);
-				});
+			Create(newPart).then(resp => {
+				setPart(resp)
+				history.push("/part/" + resp.id.id)
+			}).catch(e => {
+				if (isTwirpError(e)) {
+					setStatus(<Message attached="bottom" negative header="Failed to create part" content={e.msg} />)
+				} else {
+					setStatus(<Message attached="bottom" negative header="Failed to create part" content="Unknown error occured" />)
+				}
+			}).finally(() => {
+				setSaving(false);
+			})
 		} else {
-			request<ApiPart>("/v1/part/update/" + part.id, {method: "PUT", body: body})
-				.then(response => {
-					if (response.data) {
-						setPart(response.data)
-
-						history.replace("/part/" + part.id)
-					} else {
-						setStatus(<Message attached="bottom" negative header="Failed to save changes" content={response.message} />)
-						setSaving(false);
-					}
-				}).catch(error => {
-					console.error(error);
-					setStatus(<Message attached="bottom" negative header="Failed to save changes" content={error.message} />)
-					setSaving(false);
-				});
-			}
+			Update({...newPart, id: part.id}).then(resp => {
+				setPart(resp)
+				history.replace("/part/" + resp.id.id)
+			}).catch(e => {
+				if (isTwirpError(e)) {
+					setStatus(<Message attached="bottom" negative header="Failed to save changes" content={e.msg} />)
+				} else {
+					setStatus(<Message attached="bottom" negative header="Failed to save changes" content="Unknown error occured" />)
+				}
+			}).finally(() => {
+				setSaving(false);
+			})
+		}
 	}
 
 	const onScan = (id: string, t: Type) => {
 		if (t === "storage") {
-			setStorageID(id);
+			setStorageID({ id: id });
 		} else {
 			console.error("Not a valid storage code");
 			setStatus(<Message attached="bottom" negative header="QR code not valid" content="The QR code does not contain a valid storage ID" />)
@@ -178,7 +183,7 @@ export const PartEdit: FC<Props> = ( { part, setPart, create }: Props ) => {
 					<Form.Field width={5}>
 						<label>Storage</label>
 						<Form.Group>
-							<Form.Dropdown name="storage" value={storageID || ""} allowAdditions loading={loading} clearable search selection additionLabel="Create storage: " options={storage} onAddItem={addStorage} onChange={handleChangeDropdown} />
+							<Form.Dropdown name="storage" value={storageID.id || ""} allowAdditions loading={loading} clearable search selection additionLabel="Create storage: " options={storage} onAddItem={addStorage} onChange={handleChangeDropdown} />
 							<Qr trigger={<Form.Button type="button" icon="qrcode"/>} onScan={onScan} />
 						</Form.Group>
 					</Form.Field>

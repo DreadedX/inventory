@@ -2,14 +2,15 @@ import { FC } from 'react';
 import { useHistory } from "react-router-dom";
 import { Table } from 'semantic-ui-react';
 import TextTruncate from 'react-text-truncate';
+import { Part } from '../models/models.pb';
 
 interface Props {
-	parts: ApiPart[]
+	parts: Part[]
 	storage?: boolean
 };
 
 interface ItemProps {
-	part: ApiPart
+	part: Part
 	storage: boolean
 }
 
@@ -17,7 +18,7 @@ const Item: FC<ItemProps> = ({ part, storage }) => {
 	const history = useHistory();
 
 	const handleClick = () => {
-		history.push("/part/" + part.id)
+		history.push("/part/" + part.id.id)
 	};
 
 	return (<Table.Row style={{cursor: 'pointer'}} negative={!part.quantity} onClick={handleClick}>
@@ -52,7 +53,7 @@ export const PartList: FC<Props> = ({ parts, storage=false }: Props) => {
 				</Table.Row>
 			</Table.Header>
 			<Table.Body>
-				{parts.map((part) => <Item key={part.id} part={part} storage={storage} />)}
+				{parts.map((part) => <Item key={part.id.id} part={part} storage={storage} />)}
 			</Table.Body>
 		</Table>
 	);

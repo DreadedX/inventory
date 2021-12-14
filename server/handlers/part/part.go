@@ -1,189 +1,119 @@
 package part
 
 import (
-	"net/http"
-	"sort"
+	"context"
+	"log"
 
-	"github.com/btcsuite/btcutil/base58"
-	"github.com/gin-gonic/gin"
-	"github.com/google/uuid"
-	"github.com/lithammer/fuzzysearch/fuzzy"
-
-	"inventory/handlers"
 	"inventory/models"
+
+	"github.com/twitchtv/twirp"
+	"gorm.io/gorm"
 )
 
-func FetchAll(env *handlers.Env) gin.HandlerFunc {
-	return func(c *gin.Context) {
-		search := c.Param("search")
-		// @todo This does not properly deal with unicode
-		search = search[1:]
-
-		var parts []models.Part
-
-		env.DB.Order("name ASC").Joins("Storage").Find(&parts)
-
-		if len(search) > 0 {
-			var values []string
-			for _, part := range parts {
-				v := part.Name + " " + part.Description + " " + part.Footprint
-				if part.Storage != nil {
-					v += part.Storage.Name
-				}
-				values = append(values, v)
-			}
-			ranks := fuzzy.RankFindNormalizedFold(search, values)
-
-			sort.Sort(ranks)
-
-			var temp []models.Part
-			for _, rank := range ranks {
-				temp = append(temp, parts[rank.OriginalIndex])
-			}
-			parts = temp
-		}
-
-		if len(parts) <= 0 {
-			c.JSON(http.StatusNotFound, gin.H{"message": "No parts found!"})
-			return
-		}
-
-		c.JSON(http.StatusOK, gin.H{"data": parts})
-	}
+type Server struct{
+	DB *gorm.DB
 }
 
-func Fetch(env *handlers.Env) gin.HandlerFunc {
-	return func(c *gin.Context) {
-		partID := c.Param("id")
+func (s *Server) FetchAll(ctx context.Context, req *FetchAllRequest) (*FetchAllResponse, error) {
+	var parts []*models.Part
+	s.DB.Order("name ASC").Joins("Storage").Find(&parts)
 
-		id, err := uuid.FromBytes(base58.Decode(partID))
-
-		if err != nil {
-			c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
-			return
-		}
-
-		var part models.Part
-		env.DB.Joins("Storage").Preload("Links").First(&part, id)
-		Nil := models.ID{uuid.Nil}
-		if part.ID == Nil {
-			c.JSON(http.StatusNotFound, gin.H{"message": "No part found!"})
-			return
-		}
-
-		c.JSON(http.StatusOK, gin.H{"data": part})
+	if len(parts) == 0 {
+		return nil, twirp.NewError(twirp.NotFound, "No parts found!")
 	}
+
+	return &FetchAllResponse{Parts: parts}, nil
 }
 
-func Create(env *handlers.Env) gin.HandlerFunc {
-	return func(c *gin.Context) {
-		var part models.Part
-		if err := c.ShouldBindJSON(&part); err != nil {
-			c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
-			return
-		}
-
-		if err := env.DB.Save(&part).Error; err != nil {
-			c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
-			return
-		}
-
-		if err := env.DB.Joins("Storage").Preload("Links").First(&part).Error; err != nil {
-			c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
-			return
-		}
-
-		c.JSON(http.StatusCreated, gin.H{"message": "Part created successfully!", "data": part})
+func (s *Server) Fetch(ctx context.Context, id *models.ID) (*models.Part, error) {
+	uuid, err := id.AsUUID()
+	if err != nil {
+		return nil, twirp.WrapError(twirp.NewError(twirp.InvalidArgument, "Invalid ID"), err)
 	}
+
+	var part models.Part
+	s.DB.Joins("Storage").Preload("Links").First(&part, uuid)
+
+	if part.Id == nil {
+		return nil, twirp.NewError(twirp.NotFound, "No part found!")
+	}
+
+	return &part, nil
 }
 
-func Delete(env *handlers.Env) gin.HandlerFunc {
-	return func(c *gin.Context) {
-		partID := c.Param("id")
-
-		id, err := uuid.FromBytes(base58.Decode(partID))
-		if err != nil {
-			c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
-			return
-		}
-
-		var part models.Part
-		env.DB.Joins("Storage").Preload("Links").First(&part, id)
-		Nil := models.ID{uuid.Nil}
-		if part.ID == Nil {
-			c.JSON(http.StatusNotFound, gin.H{"message": "No part found!"})
-			return
-		}
-
-		if err := env.DB.Select("Links").Delete(&part).Error; err != nil {
-			c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
-			return
-		}
-
-		c.JSON(http.StatusOK, gin.H{"message": "Part deleted successfully!", "data": part})
+func (s *Server) Create(ctx context.Context, part *models.Part) (*models.Part, error) {
+	if err := s.DB.Omit("Storage").Create(part).Error; err != nil {
+		return nil, twirp.WrapError(twirp.NewError(twirp.Internal, "Failed to create part"), err)
 	}
+
+	if err := s.DB.Joins("Storage").Preload("Links").First(&part).Error; err != nil {
+		return nil, twirp.WrapError(twirp.NewError(twirp.Internal, "Failed to create part"), err)
+	}
+
+	return part, nil
 }
 
+func (s *Server) Delete(ctx context.Context, id *models.ID) (*models.Part, error) {
+	uuid, err := id.AsUUID()
+	if err != nil {
+		return nil, twirp.WrapError(twirp.NewError(twirp.InvalidArgument, "Invalid ID"), err)
+	}
 
-func Update(env *handlers.Env) gin.HandlerFunc {
-	return func(c *gin.Context) {
-		partID := c.Param("id")
+	var part models.Part
+	s.DB.Joins("Storage").Preload("Links").First(&part, uuid)
+	if part.Id == nil {
+		return nil, twirp.NewError(twirp.NotFound, "No part found!")
+	}
 
-		// Convert the string id to uuid
-		id, err := uuid.FromBytes(base58.Decode(partID))
-		if err != nil {
-			c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
-			return
-		}
+	if err := s.DB.Select("Links").Delete(&part).Error; err != nil {
+		return nil, twirp.WrapError(twirp.NewError(twirp.Internal, "Failed to delete part"), err)
+	}
 
-		// Make sure the entry exist
-		var count int64
-		env.DB.Model(&models.Part{}).Where("id = ?", id).Count(&count)
-		if count <= 0 {
-			c.JSON(http.StatusNotFound, gin.H{"message": "No part found!"})
-			return
-		}
 
-		// Convert the provided JSON to struct
-		var part models.Part
-		if err := c.ShouldBindJSON(&part); err != nil {
-			c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
-			return
-		}
-		// Make sure that the ID is set to the correct value
-		part.ID = models.ID{id}
+	return &part, nil
+}
 
-		// Update part
-		if err := env.DB.Omit("Storage", "Links").Updates(&part).Error; err != nil {
-			c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
-			return
-		}
+func (s *Server) Update(ctx context.Context, part *models.Part) (*models.Part, error) {
+	uuid, err := part.Id.AsUUID()
+	if err != nil {
+		return nil, twirp.WrapError(twirp.NewError(twirp.InvalidArgument, "Invalid ID"), err)
+	}
 
-		// @todo Figure out a better way to update the links
-		// Remove all existing links
-		if err := env.DB.Where("part_id = ?", id).Delete(&models.Link{}).Error; err != nil {
-			c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
-			return
-		}
+	// Make sure the entry exist
+	var count int64
+	s.DB.Model(&models.Part{}).Where("id = ?", uuid).Count(&count)
+	if count <= 0 {
+		return nil, twirp.NewError(twirp.NotFound, "No part found!")
+	}
 
-		// Add all the links
-		for i, link := range part.Links {
-			if (len(link.Url) > 0) {
-				part.Links[i].PartID = models.ID{id};
-				if err := env.DB.Save(&part.Links[i]).Error; err != nil {
-					c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
-					return
-				}
+	// Update part
+	// @todo We can not change value to an empty value
+	if err := s.DB.Omit("Storage", "Links").Updates(&part).Error; err != nil {
+		return nil, twirp.WrapError(twirp.NewError(twirp.InvalidArgument, "Failed to update part"), err)
+	}
+
+	// @todo Figure out a better way to update the links
+	// Remove all existing links
+	if err := s.DB.Where("part_id = ?", uuid).Delete(&models.Link{}).Error; err != nil {
+		return nil, twirp.WrapError(twirp.NewError(twirp.Internal, "Failed to update part"), err)
+	}
+
+	// Add all the links
+	for i, link := range part.Links {
+		if (len(link.Url) > 0) {
+			part.Links[i].PartId = part.Id
+			log.Println(part.Links[i])
+			if err := s.DB.Create(&part.Links[i]).Error; err != nil {
+				log.Println("ERROR", part.Links[i])
+				return nil, twirp.WrapError(twirp.NewError(twirp.InvalidArgument, "Failed to update part"), err)
 			}
 		}
-
-		// Load the updated entry
-		if err := env.DB.Joins("Storage").Preload("Links").First(&part, id).Error; err != nil {
-			c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
-			return
-		}
-
-		// Return the updated entry
-		c.JSON(http.StatusOK, gin.H{"message": "Part updated successfully!", "data": part})
 	}
+
+	// Load the updated entry, since we omitted the links
+	if err := s.DB.Joins("Storage").Preload("Links").First(&part, uuid).Error; err != nil {
+		return nil, twirp.WrapError(twirp.NewError(twirp.Internal, "Failed to update part"), err)
+	}
+
+	return part, nil
 }

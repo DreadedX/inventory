@@ -1,30 +1,31 @@
 import { FC, useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import { Container, Button, Grid } from 'semantic-ui-react';
+import { isTwirpError } from 'twirpscript/dist/runtime/error';
 import { StorageList, LoadingBox, StatusBox } from '../components';
-import { request } from '../request';
+import { FetchAll } from '../handlers/storage/storage.pb';
+import { Storage } from '../models/models.pb';
 
 export const Storages: FC = () => {
-	const [storage, setStorage] = useState<ApiStorage[]>([]);
+	const [storage, setStorage] = useState<Storage[]>([]);
 	const [loading, setLoading] = useState<boolean>(true);
 	const [status, setStatus] = useState<JSX.Element>();
 
 	useEffect(() => {
-		request<ApiStorage[]>("v1/storage/list")
-			.then(response => {
-				if (response.data) {
-					setStatus(undefined);
-					setStorage(response.data);
-				} else if (response.message) {
-					setStatus(<StatusBox icon="question" message={ response.message }/>);
-				}
-
-				setLoading(false);
-			}).catch(error => {
-				console.error(error)
-				setLoading(false);
-				setStatus(<StatusBox icon="times" message={ error.message }/>)
-			});
+		FetchAll({}).then(resp => {
+			setStorage(resp.storages);
+			setStatus(undefined);
+		}).catch(e => {
+			if (isTwirpError(e)) {
+				const icon = e.code === "not_found" ? "question" : "times"
+				setStatus(<StatusBox icon={ icon } message={ e.msg }/>)
+			} else {
+				console.error(e)
+				setStatus(<StatusBox icon="times" message="Unknown error occured"/>)
+			}
+		}).finally(() => {
+			setLoading(false);
+		})
 	}, []);
 
 	return (

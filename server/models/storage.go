@@ -1,20 +1,14 @@
 package models
 
 import (
-	"gorm.io/gorm"
+	"github.com/btcsuite/btcutil/base58"
 	"github.com/google/uuid"
+	"gorm.io/gorm"
 )
 
-type Storage struct {
-	ID ID `json:"id" gorm:"type:uuid;primary_key"`
-	Name string `json:"name"`
-	Parts []Part `json:"parts,omitempty"`
-	PartCount int64 `json:"partCount,omitempty" gorm:"-"`
-}
-
 func (s *Storage) BeforeCreate(tx *gorm.DB) (err error) {
-	s.ID = ID{uuid.New()}
+	id, _ := uuid.New().MarshalBinary()
+	s.Id = &ID{Id: base58.Encode(id)}
 
 	return
 }
-

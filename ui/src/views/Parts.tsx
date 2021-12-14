@@ -1,8 +1,10 @@
 import { FC, useState, useEffect, ChangeEvent } from 'react';
 import { Link, useLocation, useHistory } from 'react-router-dom';
 import { Container, Button, Input, Grid, Pagination, PaginationProps } from 'semantic-ui-react';
+import { isTwirpError } from 'twirpscript/dist/runtime/error';
 import { PartList, LoadingBox, StatusBox } from '../components';
-import { request } from '../request';
+import { FetchAll } from '../handlers/part/part.pb';
+import { Part } from '../models/models.pb';
 
 const useQuery = () => {
 	return new URLSearchParams(useLocation().search)
@@ -14,7 +16,7 @@ export const Parts: FC = () => {
 	const query = useQuery();
 	const history = useHistory();
 
-	const [ parts, setParts ] = useState<ApiPart[]>([]);
+	const [ parts, setParts ] = useState<Part[]>([]);
 	const [ search, setSearch ] = useState(query.get("search") || "");
 	const [ loading, setLoading ] = useState<boolean>(true);
 	const [ searching, setSearching ] = useState<boolean>(false);
@@ -22,23 +24,21 @@ export const Parts: FC = () => {
 	const [ status, setStatus ] = useState<JSX.Element>();
 
 	useEffect(() => {
-		request<ApiPart[]>("v1/part/list/" + search)
-			.then(response => {
-				if (response.data) {
-					setStatus(undefined);
-					setParts(response.data);
-				} else if (response.message) {
-					setStatus(<StatusBox icon="question" message={ response.message }/>)
-				}
-
-				setLoading(false);
-				setSearching(false);
-			}).catch(error => {
-				console.error(error)
-				setStatus(<StatusBox icon="times" message={ error.message }/>)
-				setLoading(false);
-				setSearching(false);
-			});
+		FetchAll({}).then(resp => {
+			setParts(resp.parts)
+			setStatus(undefined)
+		}).catch(e => {
+			if (isTwirpError(e)) {
+				const icon = e.code === "not_found" ? "question" : "times"
+				setStatus(<StatusBox icon={ icon } message={ e.msg }/>)
+			} else {
+				console.error(e)
+				setStatus(<StatusBox icon="times" message="Unknown error occured"/>)
+			}
+		}).finally(() => {
+			setLoading(false);
+			setSearching(false);
+		})
 	}, [search]);
 
 	const handleSearch = (event: ChangeEvent<HTMLInputElement>) => {

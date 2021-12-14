@@ -73,26 +73,14 @@ func main() {
 		c.File("ui/index.html")
 	})
 
+	partServer := part.NewPartServer(&part.Server{DB: db})
+	router.POST(partServer.PathPrefix() + "*w", gin.WrapH(partServer))
+
+	storageServer := storage.NewStorageServer(&storage.Server{DB: db})
+	router.POST(storageServer.PathPrefix() + "*w", gin.WrapH(storageServer))
+
 	v1 := router.Group("/v1")
 	{
-		p := v1.Group("part")
-		{
-			p.GET("list/*search", part.FetchAll(env))
-			p.GET("get/:id", part.Fetch(env))
-			p.POST("create", part.Create(env))
-			p.PUT("update/:id", part.Update(env))
-			p.DELETE("delete/:id", part.Delete(env))
-		}
-
-		s := v1.Group("storage")
-		{
-			s.GET("list", storage.FetchAll(env))
-			s.GET("get/:id", storage.Fetch(env))
-			s.POST("create", storage.Create(env))
-			s.PUT("update/:id", storage.Update(env))
-			s.DELETE("delete/:id", storage.Delete(env))
-		}
-
 		l := v1.Group("label")
 		{
 			l.GET("part/:id", label.PrintPart(env))

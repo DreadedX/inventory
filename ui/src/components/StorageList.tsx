@@ -1,20 +1,21 @@
 import { FC } from 'react';
 import { useHistory } from "react-router-dom";
 import { Table } from 'semantic-ui-react';
+import { Storage } from '../models/models.pb';
 
 interface Props {
-	storage: ApiStorage[]
+	storage: Storage[]
 };
 
 interface ItemProps {
-	storage: ApiStorage
+	storage: Storage
 }
 
 const Item: FC<ItemProps> = ({ storage }: ItemProps) => {
 	const history = useHistory();
 
 	const handleClick = () => {
-		history.push("/storage/" + storage.id)
+		history.push("/storage/" + storage.id.id)
 	};
 
 	return (<Table.Row style={{cursor: 'pointer'}} warning={!storage?.partCount} onClick={handleClick}>
@@ -37,7 +38,7 @@ export const StorageList: FC<Props> = ({ storage }: Props) => {
 				</Table.Row>
 			</Table.Header>
 			<Table.Body>
-				{storage.map((s) => <Item key={s.id} storage={s} />)}
+				{storage.map((s) => <Item key={s.id.id} storage={s} />)}
 			</Table.Body>
 		</Table>
 	);

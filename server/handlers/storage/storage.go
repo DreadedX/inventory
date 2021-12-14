@@ -1,145 +1,107 @@
 package storage
 
 import (
-	"net/http"
-
-	"github.com/btcsuite/btcutil/base58"
-	"github.com/gin-gonic/gin"
-	"github.com/google/uuid"
-	"gorm.io/gorm"
-
-	"inventory/handlers"
+	"context"
 	"inventory/models"
+
+	"github.com/twitchtv/twirp"
+	"gorm.io/gorm"
 )
 
-func FetchAll(env *handlers.Env) gin.HandlerFunc {
-	return func(c *gin.Context) {
-		var storages []models.Storage
-		env.DB.Order("name ASC").Find(&storages)
-
-		if len(storages) <= 0 {
-			c.JSON(http.StatusNotFound, gin.H{"message": "No storage found!"})
-			return
-		}
-
-		for i, storage := range storages {
-			storages[i].PartCount = env.DB.Model(&storage).Association("Parts").Count()
-		}
-
-
-		c.JSON(http.StatusOK, gin.H{"data": storages})
-	}
+type Server struct{
+	DB *gorm.DB
 }
 
-func Fetch(env *handlers.Env) gin.HandlerFunc {
-	return func(c *gin.Context) {
-		partID := c.Param("id")
+func (s *Server) FetchAll(ctx context.Context, req *FetchAllRequest) (*FetchAllResponse, error) {
+	var storages []*models.Storage
+	s.DB.Order("name ASC").Find(&storages)
 
-		id, err := uuid.FromBytes(base58.Decode(partID))
-		if err != nil {
-			c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
-			return
-		}
-
-		var storage models.Storage
-		env.DB.Preload("Parts", func(db *gorm.DB) *gorm.DB {
-			return db.Order("parts.name ASC")
-		}).First(&storage, id)
-		Nil := models.ID{uuid.Nil}
-		if storage.ID == Nil {
-			c.JSON(http.StatusNotFound, gin.H{"message": "No storage found!"})
-			return
-		}
-
-		c.JSON(http.StatusOK, gin.H{"data": storage})
+	if len(storages) == 0 {
+		return nil, twirp.NewError(twirp.NotFound, "No storage found!")
 	}
+
+	for i, storage := range storages {
+		storages[i].PartCount = int32(s.DB.Model(&storage).Association("Parts").Count())
+	}
+
+
+	return &FetchAllResponse{Storages: storages}, nil
 }
 
-func Create(env *handlers.Env) gin.HandlerFunc {
-	return func(c *gin.Context) {
-		var storage models.Storage
-		if err := c.ShouldBindJSON(&storage); err != nil {
-			c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
-			return
-		}
-
-		if err := env.DB.Save(&storage).Error; err != nil {
-			c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
-			return
-		}
-
-		c.JSON(http.StatusCreated, gin.H{"message": "Storage created successfully!", "data": storage})
+func (s *Server) Fetch(ctx context.Context, id *models.ID) (*models.Storage, error) {
+	uuid, err := id.AsUUID()
+	if err != nil {
+		return nil, twirp.WrapError(twirp.NewError(twirp.InvalidArgument, "Invalid ID"), err)
 	}
+
+	var storage models.Storage
+	s.DB.Preload("Parts", func(db *gorm.DB) *gorm.DB {
+		return db.Order("parts.name ASC")
+	}).First(&storage, uuid)
+
+	if storage.Id == nil {
+		return nil, twirp.NewError(twirp.NotFound, "No storage found!")
+	}
+
+	return &storage, nil
 }
 
-func Delete(env *handlers.Env) gin.HandlerFunc {
-	return func(c *gin.Context) {
-		storageID := c.Param("id")
-
-		id, err := uuid.FromBytes(base58.Decode(storageID))
-		if err != nil {
-			c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
-			return
-		}
-
-		var storage models.Storage
-		env.DB.Preload("Parts").First(&storage, id)
-		Nil := models.ID{uuid.Nil}
-		if storage.ID == Nil {
-			c.JSON(http.StatusNotFound, gin.H{"message": "No storage found!"})
-			return
-		}
-
-		if err := env.DB.Delete(&storage).Error; err != nil {
-			c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
-			return
-		}
-
-		c.JSON(http.StatusOK, gin.H{"message": "Storage deleted successfully!", "data": storage})
+func (s *Server) Create(ctx context.Context, storage *models.Storage) (*models.Storage, error) {
+	if err := s.DB.Save(storage).Error; err != nil {
+		return nil, twirp.WrapError(twirp.NewError(twirp.Internal, "Failed to create part"), err)
 	}
+
+	return storage, nil
 }
 
-func Update(env *handlers.Env) gin.HandlerFunc {
-	return func(c *gin.Context) {
-		storageID := c.Param("id")
-
-		// Convert the string id to uuid
-		id, err := uuid.FromBytes(base58.Decode(storageID))
-		if err != nil {
-			c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
-			return
-		}
-
-		// Make sure the entry exist
-		var count int64
-		env.DB.Model(&models.Storage{}).Where("id = ?", id).Count(&count)
-		if count <= 0 {
-			c.JSON(http.StatusNotFound, gin.H{"message": "No storage found!"})
-			return
-		}
-
-		// Convert the provided JSON to struct
-		var storage models.Storage
-		if err := c.ShouldBindJSON(&storage); err != nil {
-			c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
-			return
-		}
-		// Make sure that the ID is set to the correct value
-		storage.ID = models.ID{id}
-
-		// Update storage
-		if err := env.DB.Omit("Parts", "ID").Updates(&storage).Error; err != nil {
-			c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
-			return
-		}
-
-		// Load the updated entry
-		if err := env.DB.Preload("Parts").First(&storage, id).Error; err != nil {
-			c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
-			return
-		}
-
-		// Return the updated entry
-		c.JSON(http.StatusOK, gin.H{"message": "Storage updated successfully!", "data": storage})
+func (s *Server) Delete(ctx context.Context, id *models.ID) (*models.Storage, error) {
+	uuid, err := id.AsUUID()
+	if err != nil {
+		return nil, twirp.WrapError(twirp.NewError(twirp.InvalidArgument, "Invalid ID"), err)
 	}
+
+	var storage models.Storage
+	s.DB.Preload("Parts").First(&storage, uuid)
+	if storage.Id == nil {
+		return nil, twirp.NewError(twirp.NotFound, "No storage found!")
+	}
+
+	// Remove reference to storage from parts
+	for _, part := range storage.Parts {
+		if err := s.DB.Model(&part).Update("storage_id", nil).Error; err != nil {
+			return nil, twirp.WrapError(twirp.NewError(twirp.Internal, "Failed to delete part"), err)
+		}
+	}
+
+	if err := s.DB.Delete(&storage).Error; err != nil {
+		return nil, twirp.WrapError(twirp.NewError(twirp.Internal, "Failed to delete part"), err)
+	}
+
+	return &storage, nil
+}
+
+func (s *Server) Update(ctx context.Context, storage *models.Storage) (*models.Storage, error) {
+	uuid, err := storage.Id.AsUUID()
+	if err != nil {
+		return nil, twirp.WrapError(twirp.NewError(twirp.InvalidArgument, "Invalid ID"), err)
+	}
+
+	// Make sure the entry exist
+	var count int64
+	s.DB.Model(&models.Storage{}).Where("id = ?", uuid).Count(&count)
+	if count <= 0 {
+		return nil, twirp.NewError(twirp.NotFound, "No storage found!")
+	}
+
+	// Update storage
+	if err := s.DB.Omit("Parts", "ID").Updates(&storage).Error; err != nil {
+		return nil, twirp.WrapError(twirp.NewError(twirp.InvalidArgument, "Failed to update storage"), err)
+	}
+
+	// Load the updated entry, since we omitted the parts
+	if err := s.DB.Preload("Parts").First(&storage, uuid).Error; err != nil {
+		return nil, twirp.WrapError(twirp.NewError(twirp.Internal, "Failed to update storage"), err)
+	}
+
+	return storage, nil
 }

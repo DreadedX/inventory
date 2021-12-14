@@ -1,0 +1,18 @@
+syntax = "proto3";
+package handlers.storage;
+option go_package = "inventory/handlers/storage";
+
+import "models/models.proto";
+
+service Storage {
+	rpc FetchAll(FetchAllRequest) returns (FetchAllResponse);
+	rpc Fetch(models.ID) returns (models.Storage);
+	rpc Create(models.Storage) returns (models.Storage);
+	rpc Delete(models.ID) returns (models.Storage);
+	rpc Update(models.Storage) returns (models.Storage);
+}
+
+message FetchAllRequest {}
+message FetchAllResponse {
+	repeated models.Storage storages = 1;
+}

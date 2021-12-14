@@ -1,0 +1,31 @@
+syntax = "proto3";
+package models;
+option go_package = "inventory/models";
+
+message Storage {
+	ID id = 1; // @gotags: gorm:"type:uuid;primary_key"
+	string name = 2;
+	repeated Part parts = 3;
+	int32 partCount = 4; // @gotags: gorm:"-"
+}
+
+message Part {
+	ID id = 1; // @gotags: gorm:"type:uuid;primary_key"
+	string name = 2;
+	string description = 3;
+	string footprint = 4;
+	int32 quantity = 5;
+	ID storageId = 6; // @gotags: gorm:"type:uuid"
+	Storage storage = 7;
+	repeated Link links = 8;
+}
+
+message Link {
+	int32 id = 1; // @gotags: gorm:"type:primary_key"
+	string url = 2;
+	ID partId = 3; // @gotags: gorm:"type:uuid"
+}
+
+message ID {
+	string id = 1;
+}
