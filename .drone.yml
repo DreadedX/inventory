@@ -37,10 +37,9 @@ steps:
       when:
         branch:
           - master
-            when:
-      event:
-        exclude:
-        - pull_request
+        event:
+          exclude:
+            - pull_request
 
 volumes:
     - name: socket
