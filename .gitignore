@@ -27,5 +27,7 @@ yarn-debug.log*
 yarn-error.log*
 
 # Generated files
-*.pb.*
-*.twirp.*
+*.pb.go
+*.twirp.go
+*.pb.ts
+*.twirp.ts

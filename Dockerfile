@@ -1,16 +1,21 @@
-FROM golang as build-server
+FROM golang:alpine as build-server
+
+RUN apk add protoc bash
 
 WORKDIR /src
 COPY server/go.mod .
 COPY server/go.sum .
 
-RUN go mod download
-
 COPY server .
+COPY proto ../proto
+
+RUN ./install.sh && ./generate.sh
 RUN go build
 
 
 FROM node:alpine as build-ui
+
+RUN apk add protoc
 
 WORKDIR /src
 COPY ui/package.json .
@@ -18,10 +23,17 @@ COPY ui/yarn.lock .
 RUN yarn
 
 COPY ui .
+COPY proto ../proto
+
+RUN yarn twirpscript
+
+ENV NODE_OPTIONS=--openssl-legacy-provider
 RUN yarn build
 
 
 FROM python
+
+RUN set -ex && apt-get update && apt-get install musl
 
 WORKDIR /app
 
