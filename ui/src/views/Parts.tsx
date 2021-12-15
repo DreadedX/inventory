@@ -60,7 +60,7 @@ export const Parts: FC = () => {
 				</Grid>
 				{ status || <LoadingBox loading={ loading }>
 					<PartList parts={ parts.slice(listLength*(page-1), listLength*page) } />
-					{ parts.length > listLength && <Pagination style={{ alignItems: 'center' }} activePage={page} totalPages={parts.length / listLength} onPageChange={handlePageChange} />}
+					{ parts.length > listLength && <Pagination style={{ alignItems: 'center' }} activePage={page} totalPages={Math.ceil(parts.length / listLength)} onPageChange={handlePageChange} />}
 				</LoadingBox>}
 			</Container>
 	);
