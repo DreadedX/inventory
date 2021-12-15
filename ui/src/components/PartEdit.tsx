@@ -165,7 +165,7 @@ export const PartEdit: FC<Props> = ( { part, setPart, create }: Props ) => {
 			<Menu.Item header style={{marginLeft: '0.5em'}}>
 				{ name || (create ? "Create part" : "Edit part") }
 			</Menu.Item>
-			{ !create && <Menu.Item position="right" onClick={() => history.replace("/part/" + part.id)}>
+			{ !create && <Menu.Item position="right" onClick={() => history.replace("/part/" + part.id.id)}>
 				<Icon name="cancel" />
 			</Menu.Item> }
 			<Menu.Item position={create ? "right" : undefined} onClick={save}>

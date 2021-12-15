@@ -66,7 +66,7 @@ export const StorageEdit: FC<Props> = ( { storage, setStorage, create }: Props )
 			<Menu.Item header style={{marginLeft: '0.5em'}}>
 				{ name || (create ? "Create storage" : "Edit storage") }
 			</Menu.Item>
-			{ !create && <Menu.Item position="right" onClick={() => history.replace("/storage/" + storage.id)}>
+			{ !create && <Menu.Item position="right" onClick={() => history.replace("/storage/" + storage.id.id)}>
 				<Icon name="cancel" />
 			</Menu.Item> }
 			<Menu.Item position={create ? "right" : undefined} onClick={save}>
