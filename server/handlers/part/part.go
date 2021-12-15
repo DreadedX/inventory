@@ -88,7 +88,7 @@ func (s *Server) Update(ctx context.Context, part *models.Part) (*models.Part, e
 
 	// Update part
 	// @todo We can not change value to an empty value
-	if err := s.DB.Omit("Storage", "Links").Updates(&part).Error; err != nil {
+	if err := s.DB.Select("*").Omit("Storage", "Links").Updates(&part).Error; err != nil {
 		return nil, twirp.WrapError(twirp.NewError(twirp.InvalidArgument, "Failed to update part"), err)
 	}
 

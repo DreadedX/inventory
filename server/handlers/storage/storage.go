@@ -94,7 +94,7 @@ func (s *Server) Update(ctx context.Context, storage *models.Storage) (*models.S
 	}
 
 	// Update storage
-	if err := s.DB.Omit("Parts", "ID").Updates(&storage).Error; err != nil {
+	if err := s.DB.Select("*").Omit("Parts", "ID").Updates(&storage).Error; err != nil {
 		return nil, twirp.WrapError(twirp.NewError(twirp.InvalidArgument, "Failed to update storage"), err)
 	}
 
