@@ -47,4 +47,5 @@ COPY --from=build-server /src/fonts fonts
 COPY --from=build-server /src/inventory .
 COPY --from=build-ui /src/build ./ui
 
+ENV GIN_MODE=release
 CMD ["./inventory"]

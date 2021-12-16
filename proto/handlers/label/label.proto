@@ -1,0 +1,30 @@
+syntax = "proto3";
+package handlers.label;
+option go_package = "inventory/handlers/label";
+
+import "models/models.proto";
+
+service Label {
+	rpc Print(Request) returns (PrintResponse);
+	rpc Preview(Request) returns (PreviewResponse);
+}
+
+enum Type {
+	PART = 0;
+	STORAGE = 1;
+	CUSTOM = 2;
+}
+
+message Request {
+	Type type = 1;
+	oneof content {
+		models.ID id = 2;
+		string text = 3;
+	}
+}
+
+message PrintResponse {}
+
+message PreviewResponse {
+	bytes image = 1;
+}

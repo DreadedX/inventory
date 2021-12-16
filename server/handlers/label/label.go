@@ -1,82 +1,91 @@
 package label
 
 import (
-	"net/http"
+	"context"
+	"inventory/models"
 	"os/exec"
 
-	"github.com/btcsuite/btcutil/base58"
-	"github.com/gin-gonic/gin"
-	"github.com/google/uuid"
-
-	"inventory/handlers"
-	"inventory/models"
+	"github.com/twitchtv/twirp"
+	"gorm.io/gorm"
 )
 
-func PreviewPart(env *handlers.Env) gin.HandlerFunc {
-	return func(c *gin.Context) {
-		idString := c.Param("id")
+type Server struct{
+	DB *gorm.DB
+	PythonPath string
+	PrintPath string
+}
 
-		id, err := uuid.FromBytes(base58.Decode(idString))
-		if err != nil {
-			c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
-			return
+func generateImage(s *Server, req *Request) ([]byte, error) {
+	switch req.Type {
+	case Type_PART:
+		id := req.GetId()
+		if id == nil {
+			return nil, twirp.NewError(twirp.InvalidArgument, "No id specified")
 		}
 
 		var part models.Part
-		env.DB.First(&part, id)
+		s.DB.First(&part, id)
 
 		png, err := generateLabelPart(&part)
 		if err != nil {
-			c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
-			return
+			return nil, twirp.WrapError(twirp.NewError(twirp.Internal, "Failed to generate image"), err)
 		}
 
-		c.Data(http.StatusOK, "image/png", png)
-	}
-}
+		return png, nil
 
-func PreviewStorage(env *handlers.Env) gin.HandlerFunc {
-	return func(c *gin.Context) {
-		idString := c.Param("id")
-
-		id, err := uuid.FromBytes(base58.Decode(idString))
-		if err != nil {
-			c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
-			return
+	case Type_STORAGE:
+		id := req.GetId()
+		if id == nil {
+			return nil, twirp.NewError(twirp.InvalidArgument, "No id specified")
 		}
 
 		var storage models.Storage
-		env.DB.First(&storage, id)
+		s.DB.First(&storage, id)
 
 		png, err := generateLabelStorage(&storage)
 		if err != nil {
-			c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
-			return
+			return nil, twirp.WrapError(twirp.NewError(twirp.Internal, "Failed to generate image"), err)
 		}
 
-		c.Data(http.StatusOK, "image/png", png)
-	}
-}
+		return png, nil
 
-func PreviewCustom(env *handlers.Env) gin.HandlerFunc {
-	return func(c *gin.Context) {
-		name := c.Param("name")
+	case Type_CUSTOM:
+		text := req.GetText()
+		if len(text) == 0 {
+			return nil, twirp.NewError(twirp.InvalidArgument, "No text specified")
+		}
 
-		png, err := generateLabelCustom(name)
+		png, err := generateLabelCustom(text)
 		if err != nil {
-			c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
-			return
+			return nil, twirp.WrapError(twirp.NewError(twirp.Internal, "Failed to generate image"), err)
 		}
 
-		c.Data(http.StatusOK, "image/png", png)
+		return png, nil
 	}
+
+	return nil, twirp.NewError(twirp.Internal, "Unable to handle type")
+
 }
 
-func printPNG(env *handlers.Env, png []byte) error {
-	cmd := exec.Command(env.PythonPath + "python", env.PrintPath + "print.py")
+func (s *Server) Preview(ctx context.Context, req *Request) (*PreviewResponse, error) {
+	png, err := generateImage(s, req)
+	if err != nil {
+		return nil, err
+	}
+
+	return &PreviewResponse{Image: png}, nil
+}
+
+func (s *Server) Print(ctx context.Context, req *Request) (*PrintResponse, error) {
+	png, err := generateImage(s, req)
+	if err != nil {
+		return nil, err
+	}
+
+	cmd := exec.Command(s.PythonPath + "python", s.PrintPath + "print.py")
 	stdin, err := cmd.StdinPipe()
 	if err != nil {
-		return err
+		return nil, twirp.WrapError(twirp.NewError(twirp.Internal, "Failed to print label"), err)
 	}
 
 	// @TODO Make sure we handle any error here properly
@@ -88,83 +97,9 @@ func printPNG(env *handlers.Env, png []byte) error {
 	}()
 
 	if err := cmd.Run(); err != nil {
-		return err
+		return nil, twirp.WrapError(twirp.NewError(twirp.Internal, "Failed to print label"), err)
 	}
 
-	return nil
+	return &PrintResponse{}, nil
 }
 
-func PrintPart(env *handlers.Env) gin.HandlerFunc {
-	return func(c *gin.Context) {
-		idString := c.Param("id")
-
-		id, err := uuid.FromBytes(base58.Decode(idString))
-		if err != nil {
-			c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
-			return
-		}
-
-		var part models.Part
-		env.DB.First(&part, id)
-
-		png, err := generateLabelPart(&part)
-		if err != nil {
-			c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
-			return
-		}
-
-		if err := printPNG(env, png); err != nil {
-			c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
-			return
-		}
-
-		c.Status(http.StatusOK)
-	}
-}
-
-func PrintStorage(env *handlers.Env) gin.HandlerFunc {
-	return func(c *gin.Context) {
-		idString := c.Param("id")
-
-		id, err := uuid.FromBytes(base58.Decode(idString))
-		if err != nil {
-			c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
-			return
-		}
-
-		var storage models.Storage
-		env.DB.First(&storage, id)
-
-		png, err := generateLabelStorage(&storage)
-		if err != nil {
-			c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
-			return
-		}
-
-		if err := printPNG(env, png); err != nil {
-			c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
-			return
-		}
-
-		c.Status(http.StatusOK)
-	}
-}
-
-func PrintCustom(env *handlers.Env) gin.HandlerFunc {
-	return func(c *gin.Context) {
-		name := c.Param("name")
-
-		png, err := generateLabelCustom(name)
-		if err != nil {
-			c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
-			return
-		}
-
-		if err := printPNG(env, png); err != nil {
-			c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
-			return
-		}
-
-		c.Status(http.StatusOK)
-	}
-}

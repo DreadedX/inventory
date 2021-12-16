@@ -10,7 +10,6 @@ import (
 	"gorm.io/driver/postgres"
 	"gorm.io/gorm"
 
-	"inventory/handlers"
 	"inventory/handlers/label"
 	"inventory/handlers/part"
 	"inventory/handlers/storage"
@@ -56,15 +55,6 @@ func main() {
 	}
 	Migrate(db)
 
-	env := &handlers.Env{DB: db}
-
-	env.PythonPath = os.Getenv("INVENTORY_PYTHON_PATH")
-	env.PrintPath = os.Getenv("INVENTORY_PRINT_PATH")
-	if env.PrintPath == "" {
-		env.PrintPath = "print/"
-	}
-
-	gin.SetMode(gin.TestMode)
 	router := gin.Default()
 
 	// Host react ui
@@ -79,18 +69,8 @@ func main() {
 	storageServer := storage.NewStorageServer(&storage.Server{DB: db})
 	router.POST(storageServer.PathPrefix() + "*w", gin.WrapH(storageServer))
 
-	v1 := router.Group("/v1")
-	{
-		l := v1.Group("label")
-		{
-			l.GET("part/:id", label.PrintPart(env))
-			l.GET("part/:id/preview", label.PreviewPart(env))
-			l.GET("storage/:id", label.PrintStorage(env))
-			l.GET("storage/:id/preview", label.PreviewStorage(env))
-			l.GET("custom/:name", label.PrintCustom(env))
-			l.GET("custom/:name/preview", label.PreviewCustom(env))
-		}
-	}
+	labelServer := label.NewLabelServer(&label.Server{DB: db, PythonPath: os.Getenv("INVENTORY_PYTHON_PATH"), PrintPath: os.Getenv("INVENTORY_PRINT_PATH")})
+	router.POST(labelServer.PathPrefix() + "*w", gin.WrapH(labelServer))
 
 	port := os.Getenv("PORT")
 	if port == "" {

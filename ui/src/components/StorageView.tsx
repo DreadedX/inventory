@@ -2,6 +2,7 @@ import { FC, Fragment, useState, useEffect } from 'react';
 import { useHistory, Link } from 'react-router-dom';
 import { Message, Menu, Icon, Modal, Button } from 'semantic-ui-react';
 import { isTwirpError } from 'twirpscript/dist/runtime/error';
+import { Type } from '../handlers/label/label.pb';
 import { Delete } from '../handlers/storage/storage.pb';
 import { Storage } from '../models/models.pb';
 import { PartList, PrintLabel} from './';
@@ -52,7 +53,7 @@ export const StorageView: FC<Props> = ({ storage, edit }: Props) => {
 			<Menu.Item position="right" as={Link} to={"/part/create/" + storage.id.id}>
 				<Icon name="add" />
 			</Menu.Item>
-			<PrintLabel id={storage.id.id} type="storage" trigger={<Menu.Item><Icon name="print" /></Menu.Item>} />
+			<PrintLabel id={storage.id} type={Type.STORAGE} trigger={<Menu.Item><Icon name="print" /></Menu.Item>} />
 			<Menu.Item onClick={() => history.replace(edit)}>
 				<Icon name="edit" />
 			</Menu.Item>

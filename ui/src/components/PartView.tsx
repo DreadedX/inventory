@@ -5,6 +5,7 @@ import { PrintLabel } from './';
 import { Part } from '../models/models.pb';
 import { Delete } from '../handlers/part/part.pb';
 import { isTwirpError } from 'twirpscript/dist/runtime/error';
+import { Type } from '../handlers/label/label.pb';
 
 interface Props {
 	part: Part
@@ -59,7 +60,7 @@ export const PartView: FC<Props> = ({ part, edit }: Props) => {
 			<Menu.Item header style={{marginLeft: '0.5em'}}>
 				{part.name}
 			</Menu.Item>
-			<PrintLabel id={part.id.id} type="part" trigger={<Menu.Item position="right"><Icon name="print" /></Menu.Item>} />
+			<PrintLabel id={part.id} type={Type.PART} trigger={<Menu.Item position="right"><Icon name="print" /></Menu.Item>} />
 			<Menu.Item onClick={() => history.replace(edit)}>
 				<Icon name="edit" />
 			</Menu.Item>
