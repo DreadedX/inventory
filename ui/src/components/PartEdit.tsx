@@ -7,6 +7,7 @@ import { ID, Link, Part, Storage } from '../models/models.pb';
 import { Create as CreateStorage, FetchAll } from '../handlers/storage/storage.pb';
 import { isTwirpError } from 'twirpscript/dist/runtime/error';
 import { Create, Update } from '../handlers/part/part.pb';
+import { Type } from '../handlers/label/label.pb';
 
 interface Props {
 	part: Part
@@ -152,7 +153,7 @@ export const PartEdit: FC<Props> = ( { part, setPart, create }: Props ) => {
 	}
 
 	const onScan = (id: string, t: Type) => {
-		if (t === "storage") {
+		if (t === Type.STORAGE) {
 			setStorageID({ id: id });
 		} else {
 			console.error("Not a valid storage code");

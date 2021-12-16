@@ -3,12 +3,9 @@ import { useHistory } from 'react-router'
 import { Header } from 'semantic-ui-react'
 import { QrReader } from '@blackbox-vision/react-qr-reader';
 import { Result } from '@zxing/library';
+import { Type } from '../handlers/label/label.pb';
 
-interface Props {
-	onScan: (id: string, t: Type) => void
-}
-
-export const Scan: FC<Props> = ({ onScan }: Props) => {
+export const Scan: FC = () => {
 	const history = useHistory();
 
 	const onResult = (result: Result | null | undefined) => {
@@ -17,9 +14,9 @@ export const Scan: FC<Props> = ({ onScan }: Props) => {
 
 			var text = result.getText();
 			if (text.startsWith("s/")) {
-				t = "storage";
+				t = Type.STORAGE;
 			} else if (text.startsWith("p/")) {
-				t = "part";
+				t = Type.CUSTOM;
 			}
 
 			if (t) {

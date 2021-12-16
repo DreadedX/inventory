@@ -2,6 +2,7 @@ import { FC, useState, ReactNode } from 'react';
 import { Modal } from 'semantic-ui-react';
 import { QrReader } from '@blackbox-vision/react-qr-reader';
 import { Result } from '@zxing/library';
+import { Type } from '../handlers/label/label.pb';
 
 interface Props {
 	trigger: ReactNode
@@ -17,9 +18,9 @@ export const Qr: FC<Props> = ({ trigger, onScan}: Props) => {
 
 			var text = result.getText();
 			if (text.startsWith("s/")) {
-				t = "storage";
+				t = Type.STORAGE;
 			} else if (text.startsWith("p/")) {
-				t = "part";
+				t = Type.PART;
 			}
 
 			if (t) {

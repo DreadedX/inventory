@@ -2,7 +2,7 @@ import { FC, useState } from 'react';
 import { useParams } from 'react-router-dom';
 import { Container } from 'semantic-ui-react';
 import { PartEdit } from '../components';
-import { Part, Storage } from '../models/models.pb';
+import { Part } from '../models/models.pb';
 
 interface Params {
 	id: string
