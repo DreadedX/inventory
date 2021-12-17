@@ -1,0 +1,4 @@
+{
+	"root": "../proto",
+	"dest": "./src"
+}
