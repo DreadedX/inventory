@@ -2,8 +2,8 @@ package label
 
 import (
 	"context"
+	"inventory/handlers/printer"
 	"inventory/models"
-	"os/exec"
 
 	"github.com/twitchtv/twirp"
 	"gorm.io/gorm"
@@ -11,8 +11,7 @@ import (
 
 type Server struct{
 	DB *gorm.DB
-	PythonPath string
-	PrintPath string
+	Printer printer.Printer
 }
 
 func generateImage(s *Server, req *Request) ([]byte, error) {
@@ -82,23 +81,11 @@ func (s *Server) Print(ctx context.Context, req *Request) (*PrintResponse, error
 		return nil, err
 	}
 
-	cmd := exec.Command(s.PythonPath + "python", s.PrintPath + "print.py")
-	stdin, err := cmd.StdinPipe()
+	_, err = s.Printer.Print(context.Background(), &printer.Request{Image: png})
 	if err != nil {
-		return nil, twirp.WrapError(twirp.NewError(twirp.Internal, "Failed to print label"), err)
+		return nil, err
 	}
 
-	// @TODO Make sure we handle any error here properly
-	go func() {
-		defer stdin.Close()
-		if _, err := stdin.Write(png); err != nil {
-			return
-		}
-	}()
-
-	if err := cmd.Run(); err != nil {
-		return nil, twirp.WrapError(twirp.NewError(twirp.Internal, "Failed to print label"), err)
-	}
 
 	return &PrintResponse{}, nil
 }

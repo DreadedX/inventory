@@ -30,10 +30,20 @@ steps:
           DEVICE:
               from_secret: DEVICE
       commands:
-          - docker stop inventory
+          - docker stop inventory || true
+          - docker stop printer || true
+
           - docker rm inventory || true
-          - docker run -e DB_HOST=$DB_HOST -e DB_PORT=$DB_PORT -e DB_NAME=$DB_NAME -e DB_USER=$DB_USER -e DB_PASS=$DB_PASS --device /dev/usb/lp0 --network postgres --name inventory -d inventory
+          - docker rm printer|| true
+          - docker network rm printer || true
+
+          - docker run -e PRINTER_HOST="http://printer:4000" -e DB_HOST=$DB_HOST -e DB_PORT=$DB_PORT -e DB_NAME=$DB_NAME -e DB_USER=$DB_USER -e DB_PASS=$DB_PASS --network postgres --name inventory -d inventory
           - docker network connect web inventory
+
+          - docker run -h printer --device /dev/usb/lp0 --name printer --workdir /app/printer -d inventory uvicorn server:app --port=4000 --host=0.0.0.0
+          - docker network create printer
+          - docker network connect printer printer
+          - docker network connect printer inventory
       when:
         branch:
           - master

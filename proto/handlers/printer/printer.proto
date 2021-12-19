@@ -1,0 +1,13 @@
+syntax = "proto3";
+package handlers.printer;
+option go_package = "inventory/handlers/printer";
+
+service Printer {
+	rpc Print(Request) returns (PrintResponse);
+}
+
+message Request {
+	bytes image = 1;
+}
+
+message PrintResponse {}

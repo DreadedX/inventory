@@ -3,6 +3,7 @@ package main
 import (
 	"fmt"
 	"log"
+	"net/http"
 	"os"
 
 	"github.com/gin-contrib/static"
@@ -12,6 +13,7 @@ import (
 
 	"inventory/handlers/label"
 	"inventory/handlers/part"
+	"inventory/handlers/printer"
 	"inventory/handlers/storage"
 	"inventory/models"
 )
@@ -48,6 +50,11 @@ func main() {
 		dbPass = "root"
 	}
 
+	printerHost := os.Getenv("PRINTER_HOST")
+	if printerHost == "" {
+		printerHost = "http://localhost:4000"
+	}
+
 	dsn := fmt.Sprintf("host=%v port=%v dbname=%v user=%v password=%v sslmode=disable", dbHost, dbPort, dbName, dbUser, dbPass)
 	db, err := gorm.Open(postgres.Open(dsn), &gorm.Config{})
 	if err != nil {
@@ -69,7 +76,7 @@ func main() {
 	storageServer := storage.NewStorageServer(&storage.Server{DB: db})
 	router.POST(storageServer.PathPrefix() + "*w", gin.WrapH(storageServer))
 
-	labelServer := label.NewLabelServer(&label.Server{DB: db, PythonPath: os.Getenv("INVENTORY_PYTHON_PATH"), PrintPath: os.Getenv("INVENTORY_PRINT_PATH")})
+	labelServer := label.NewLabelServer(&label.Server{DB: db, Printer: printer.NewPrinterProtobufClient(printerHost, &http.Client{})})
 	router.POST(labelServer.PathPrefix() + "*w", gin.WrapH(labelServer))
 
 	port := os.Getenv("PORT")

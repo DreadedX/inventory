@@ -1,7 +1,9 @@
 data/
 data.bak/
 ui-dist
-print/env/
+printer/env/
+__pycache__/
+tmp/
 bin/
 
 # dependencies
@@ -31,3 +33,5 @@ yarn-error.log*
 *.twirp.go
 *.pb.ts
 *.twirp.ts
+*_pb2.py
+*_twirp.py
