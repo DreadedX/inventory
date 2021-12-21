@@ -54,6 +54,9 @@ func (id *ID) Scan(src interface{}) error {
 
 
 func (id ID) Value() (driver.Value, error) {
+	if id.Id == "" {
+		return nil, nil
+	}
 	uuid, err := uuid.FromBytes(base58.Decode(id.Id))
 	if err != nil {
 		return nil, err
