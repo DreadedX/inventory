@@ -1,4 +1,4 @@
-import { NotFound } from "./NotFound";
+import { NotFound } from ".";
 import { ComponentStory, ComponentMeta } from "@storybook/react";
 import { Container } from "semantic-ui-react";
 

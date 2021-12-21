@@ -1,35 +1,21 @@
-import { PartView } from ".//PartView";
+import { PartDetail } from ".";
 import { ComponentStory, ComponentMeta } from "@storybook/react";
 import { Container } from "semantic-ui-react";
 import * as models from "../models/models.pb";
 
+import * as ToolbarStories from "./Toolbar.stories";
+
 export default {
-	title: "PartView",
-	component: PartView,
+	title: "PartDetail",
+	component: PartDetail,
 	decorators: [
 		(Story) => (<Container>
 			{Story()}
 		</Container>)
 	]
-} as ComponentMeta<typeof PartView>;
+} as ComponentMeta<typeof PartDetail>;
 
-const Template: ComponentStory<typeof PartView> = (args) => <PartView {...args} />;
-
-export const Loading = Template.bind({})
-Loading.args = {
-	part: undefined
-}
-
-export const LoadingMessage = Template.bind({})
-LoadingMessage.args = {
-	part: undefined,
-	message: {
-		severity: "error",
-		icon: "times",
-		header: "Failed to delete part",
-		details: "Connection to server timed out"
-	}
-}
+const Template: ComponentStory<typeof PartDetail> = (args) => <PartDetail {...args} />;
 
 export const Normal = Template.bind({})
 Normal.args = {
@@ -57,11 +43,32 @@ Normal.args = {
 				url: "huizinga.dev"
 			}
 		]
-	}
+	},
+	loading: false
 }
 
-export const NormalMessage = Template.bind({})
-NormalMessage.args = {
+export const Empty = Template.bind({})
+Empty.args = {
+	part: models.Part.defaultValue(),
+	loading: false,
+}
+
+export const NormalAttached = Template.bind({})
+NormalAttached.args = {
 	part: Normal.args.part,
-	message: LoadingMessage.args.message
+	loading: false,
+	attached: true
+}
+
+export const Loading = Template.bind({})
+Loading.args = {
+	part: undefined,
+	loading: true
+}
+
+export const LoadingAttached = Template.bind({})
+LoadingAttached.args = {
+	part: undefined,
+	loading: true,
+	attached: true
 }
