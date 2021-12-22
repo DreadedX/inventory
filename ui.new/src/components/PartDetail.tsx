@@ -1,5 +1,7 @@
 import { FC, Fragment, useEffect, useState } from "react";
+import { Link } from "react-router-dom";
 import { Form, Placeholder, Segment, Message } from "semantic-ui-react";
+import { LoadingStatus } from "../lib/loading";
 import * as models from "../models/models.pb";
 
 interface FieldProps {
@@ -31,7 +33,7 @@ const FieldLink: FC<FieldLinkProps & Record<string, any>> = ({ link, ...props }:
 
 interface Props {
 	part: models.Part | undefined
-	loading?: boolean
+	loading: LoadingStatus
 	attached?: boolean
 }
 
@@ -44,18 +46,18 @@ export const PartDetail: FC<Props> = ({ part, loading, attached }: Props) => {
 
 	return (<Fragment>
 		<Segment color="purple" attached={(attached || outOfStock) ? true : "bottom"}>
-			<Form>
+			<Form loading={loading.delete}>
 				<Form.Group>
-					<Field width={12} label="Name" value={part?.name} loading={loading || false}/>
-					<Field width={4} label="Footprint" value={part?.footprint} loading={loading || false}/>
+					<Field width={12} label="Name" value={part?.name} loading={loading.fetch}/>
+					<Field width={4} label="Footprint" value={part?.footprint} loading={loading.fetch}/>
 				</Form.Group>
 
 				<Form.Group>
-					<Field width={5} label="Storage" value={part?.storage?.name} loading={loading || false}/>
-					<Field width={2} label="Quantity" value={part?.quantity} loading={loading || false} placeholder={"0"} />
+					<Field as={part?.storage.id.id ? Link : undefined} to={`/storage/${part?.storage.id.id}`} width={5} label="Storage" value={part?.storage?.name} loading={loading.fetch}/>
+					<Field width={2} label="Quantity" value={part?.quantity} loading={loading.fetch} placeholder={"0"} />
 				</Form.Group>
 
-				<Field width={16} label="Description" value={part?.description} loading={loading || false}/>
+				<Field width={16} label="Description" value={part?.description} loading={loading.fetch}/>
 
 				<Form.Field>
 					<label>Links</label>

@@ -3,7 +3,7 @@ import { ComponentStory, ComponentMeta } from "@storybook/react";
 import { Container } from "semantic-ui-react";
 import * as models from "../models/models.pb";
 
-import * as ToolbarStories from "./Toolbar.stories";
+import { LoadingStatus } from "../lib/loading";
 
 export default {
 	title: "PartDetail",
@@ -44,31 +44,30 @@ Normal.args = {
 			}
 		]
 	},
-	loading: false
+	loading: LoadingStatus.defaultValue()
 }
 
 export const Empty = Template.bind({})
 Empty.args = {
 	part: models.Part.defaultValue(),
-	loading: false,
+	loading: LoadingStatus.defaultValue()
 }
 
 export const NormalAttached = Template.bind({})
 NormalAttached.args = {
 	part: Normal.args.part,
-	loading: false,
+	loading: LoadingStatus.defaultValue(),
 	attached: true
 }
 
 export const Loading = Template.bind({})
 Loading.args = {
 	part: undefined,
-	loading: true
+	loading: {...LoadingStatus.defaultValue(), fetch: true}
 }
 
-export const LoadingAttached = Template.bind({})
-LoadingAttached.args = {
-	part: undefined,
-	loading: true,
-	attached: true
+export const Delete = Template.bind({})
+Delete.args = {
+	part: Normal.args.part,
+	loading: {...LoadingStatus.defaultValue(), delete: true}
 }

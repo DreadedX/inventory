@@ -1,6 +1,7 @@
 import { Toolbar } from "./Toolbar";
 import { ComponentStory, ComponentMeta } from "@storybook/react";
 import { Container } from "semantic-ui-react";
+import { LoadingStatus } from "../lib/loading";
 
 export default {
 	title: "Toolbar",
@@ -31,12 +32,12 @@ Normal.args = {
 		}
 	],
 	name: "Resistor",
-	loading: false
+	loading: LoadingStatus.defaultValue()
 }
 
 export const Loading = Template.bind({})
 Loading.args = {
 	functions: Normal.args.functions,
 	name: undefined,
-	loading: true
+	loading: {...LoadingStatus.defaultValue(), fetch: true}
 }
