@@ -3,7 +3,7 @@ import { ComponentStory, ComponentMeta } from "@storybook/react";
 import { Container } from "semantic-ui-react";
 
 export default {
-	title: "ModalDelete",
+	title: "Modal",
 	component: ModalDelete,
 	decorators: [
 		(Story) => (<Container>
@@ -14,12 +14,22 @@ export default {
 
 const Template: ComponentStory<typeof ModalDelete> = (args) => <ModalDelete {...args} />;
 
-export const Open = Template.bind({})
-Open.args = {
+export const DeleteLoading = Template.bind({})
+DeleteLoading.args = {
+	open: true,
+	deleting: true,
 	onConfirm: () => {
 		console.log("CONFIRM")
 	},
 	onCancel: () => {
 		console.log("CANCEL")
 	}
+}
+
+export const Delete = Template.bind({})
+Delete.args = {
+	open: true,
+	deleting: false,
+	onConfirm: DeleteLoading.args.onConfirm,
+	onCancel: DeleteLoading.args.onCancel,
 }

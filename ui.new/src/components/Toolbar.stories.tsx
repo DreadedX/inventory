@@ -32,7 +32,7 @@ Normal.args = {
 		}
 	],
 	name: "Resistor",
-	loading: LoadingStatus.defaultValue()
+	loading: {...LoadingStatus.defaultValue(), fetch: false}
 }
 
 export const Loading = Template.bind({})

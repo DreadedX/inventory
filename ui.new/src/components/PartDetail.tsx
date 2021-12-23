@@ -45,8 +45,8 @@ export const PartDetail: FC<Props> = ({ part, loading, attached }: Props) => {
 	}, [part])
 
 	return (<Fragment>
-		<Segment color="purple" attached={(attached || outOfStock) ? true : "bottom"}>
-			<Form loading={loading.delete}>
+		<Segment color="grey" attached={(attached || outOfStock) ? true : "bottom"}>
+			<Form>
 				<Form.Group>
 					<Field width={12} label="Name" value={part?.name} loading={loading.fetch}/>
 					<Field width={4} label="Footprint" value={part?.footprint} loading={loading.fetch}/>

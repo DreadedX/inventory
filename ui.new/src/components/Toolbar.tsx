@@ -20,9 +20,11 @@ export const Toolbar: FC<Props> = ({ name, functions, loading }: Props) => {
 			{ (loading.fetch && "...") || name }
 		</Menu.Item>
 		{functions.map((fn, index) => {
-			return (<Menu.Item position={(index === 0 && "right") || undefined} onClick={fn.on} disabled={loading.fetch || loading.save || loading.delete} key={index}>
+			const Item = <Menu.Item key={index} position={(index === 0 && "right") || undefined} onClick={fn.on} disabled={loading.fetch || loading.save || loading.delete}>
 				<Icon name={fn.icon} />
-			</Menu.Item>)
+			</Menu.Item>
+
+			return Item
 		})}
 	</Menu>)
 }

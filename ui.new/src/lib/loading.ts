@@ -3,15 +3,17 @@ export type LoadingStatus = {
 	save: boolean
 	delete: boolean
 	options: boolean
+	print: boolean
 }
 
 export const LoadingStatus = {
 	defaultValue: (): LoadingStatus => {
 		return {
-			fetch: false,
+			fetch: true,
 			save: false,
 			delete: false,
-			options: false
+			options: true,
+			print: false
 		}
 	}
 }

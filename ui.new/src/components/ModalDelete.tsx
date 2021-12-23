@@ -1,25 +1,30 @@
-import { Dispatch, FC, SetStateAction, useEffect } from "react";
+import { FC } from "react";
 import { Button, Modal } from "semantic-ui-react";
 
 interface Props {
+	open: boolean
+	deleting: boolean
 	onConfirm: () => void
 	onCancel: () => void
 }
 
-export const ModalDelete: FC<Props> = ({ onConfirm, onCancel }: Props) => {
-
+export const ModalDelete: FC<Props> = ({ open, deleting, onConfirm, onCancel }: Props) => {
 	return (<Modal
-		open={true}
-		onClose={onCancel}>
+		open={open}
+		onClose={() => {
+			if (!deleting) {
+				onCancel()
+			}
+		}}>
 		<Modal.Header>
-			THIS CANNOT BE UNDONE!
+			Are you sure?
 		</Modal.Header>
 		<Modal.Content>
-			Are you sure you want to remove this?
+			This action can NOT be undone!
 		</Modal.Content>
 		<Modal.Actions>
-			<Button content="Cancel" color="black" onClick={onCancel}/>
-			<Button content="REMOVE" color="red" icon="trash" onClick={onConfirm}/>
+			<Button disabled={deleting} content="Cancel" color="black" onClick={onCancel}/>
+			<Button disabled={deleting} loading={deleting} content="REMOVE" color="red" icon="trash" labelPosition="left" onClick={onConfirm}/>
 		</Modal.Actions>
 	</Modal>)
 }

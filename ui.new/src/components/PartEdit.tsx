@@ -23,7 +23,7 @@ interface Props {
 export const PartEdit: FC<Props> = ({ part, availableStorage, functions, loading, attached }: Props) => {
 
 	return (<Fragment>
-		<Segment color="purple" attached={(attached) ? true : "bottom"}>
+		<Segment color="grey" attached={(attached) ? true : "bottom"}>
 			<Form loading={loading.fetch || loading.save}>
 				<Form.Group>
 					<Form.Input width={12} label="Name" name="name" placeholder="No name..." value={part?.name} onChange={functions.onChange} />
