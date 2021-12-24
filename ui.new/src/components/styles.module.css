@@ -3,3 +3,9 @@
 	width: 100%;
 	aspect-ratio: 6200/2000;
 }
+
+.scanner {
+	max-width: 100%;
+	aspect-ratio: 1;
+	object-fit: cover;
+}

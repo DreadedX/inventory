@@ -4,11 +4,13 @@ import { PartView } from "./views";
 import { BrowserRouter, Routes, Route, Outlet } from "react-router-dom";
 
 import "semantic-ui-css/semantic.min.css"
+import { QRScanner } from "./components";
 
 const App: FC = () => {
 	return (<BrowserRouter>
 		<Container style={{ margin: "3em" }}>
 			<Routes>
+				<Route path="qr" element={<QRScanner />} />
 				<Route path="part" element={<Outlet />} >
 					<Route path="" element={<p>PART LIST</p>} />
 					<Route path=":id" element={<Outlet />}>
