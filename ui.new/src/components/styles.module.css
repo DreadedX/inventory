@@ -5,7 +5,8 @@
 }
 
 .scanner {
-	max-width: 100%;
+	max-width: 100% !important;
+	width: 100%;
 	aspect-ratio: 1;
 	object-fit: cover;
 }

@@ -4,13 +4,15 @@ import { PartView } from "./views";
 import { BrowserRouter, Routes, Route, Outlet } from "react-router-dom";
 
 import "semantic-ui-css/semantic.min.css"
-import { QRScanner } from "./components";
+import { ModalQrScanner } from "./components";
 
 const App: FC = () => {
 	return (<BrowserRouter>
 		<Container style={{ margin: "3em" }}>
 			<Routes>
-				<Route path="qr" element={<QRScanner />} />
+				<Route path="qr" element={
+					<ModalQrScanner open={true} onScan={(content) => console.log(content)} onCancel={() => {}} />
+				}/>
 				<Route path="part" element={<Outlet />} >
 					<Route path="" element={<p>PART LIST</p>} />
 					<Route path=":id" element={<Outlet />}>

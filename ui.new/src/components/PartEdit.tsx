@@ -1,10 +1,10 @@
-import { ChangeEvent, FC, Fragment, SyntheticEvent, useEffect, useState } from "react";
+import { ChangeEvent, FC, Fragment, SyntheticEvent } from "react";
 import TextareaAutosize from 'react-textarea-autosize';
 import * as models from "../models/models.pb";
 import { Button, DropdownItemProps, DropdownProps, Form, Input, Segment } from "semantic-ui-react";
 import { LoadingStatus } from "../lib/loading";
 
-import QrScanner from "qr-scanner";
+import { useHasCamera } from ".";
 
 export interface PartEditFunctions {
 	onChange: (event: ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => void
@@ -23,11 +23,7 @@ interface Props {
 }
 
 export const PartEdit: FC<Props> = ({ part, availableStorage, functions, loading, attached }: Props) => {
-	const [ hasCamera, setHasCamera ] = useState(false);
-
-	useEffect(() => {
-		QrScanner.hasCamera().then(setHasCamera);
-	}, [])
+	const hasCamera = useHasCamera();
 
 	return (<Fragment>
 		<Segment color="grey" attached={(attached) ? true : "bottom"}>
