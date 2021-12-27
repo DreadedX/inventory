@@ -12,9 +12,6 @@ interface Props {
 }
 
 export const ModalPrint: FC<Props> = ({ open, printing, preview, onConfirm, onCancel }: Props) => {
-
-	console.log(styles)
-
 	return (<Modal
 		open={open}
 		onClose={() => {
