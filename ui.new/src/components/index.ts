@@ -1,5 +1,6 @@
 export { NotFound } from "./NotFound";
 export { PartDetail } from "./PartDetail";
+export { PartList } from "./PartList";
 export { PartEdit } from "./PartEdit";
 export { Toolbar } from "./Toolbar";
 export { ModalDelete } from "./ModalDelete";
