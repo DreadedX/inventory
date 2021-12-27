@@ -1,4 +1,4 @@
-import { ChangeEvent, FC, Fragment, SyntheticEvent, useEffect, useState } from "react";
+import { FC, Fragment, useEffect, useState } from "react";
 import { useNavigate, useParams } from "react-router-dom";
 import { TwirpError } from 'twirpscript/dist/runtime/error';
 import { NotFound, PartDetail, PartEdit, Toolbar, ModalDelete, ModalDiscard, ModalPrint } from "../components";
@@ -10,9 +10,8 @@ import * as models from "../models/models.pb";
 import * as Part from "../handlers/part/part.pb";
 import * as Storage from "../handlers/storage/storage.pb";
 import * as Label from "../handlers/label/label.pb";
-import { DropdownItemProps, DropdownProps, Message } from "semantic-ui-react";
-import { PartEditFunctions } from "../components/PartEdit";
-import { cloneDeep, cloneDeepWith } from "lodash";
+import { DropdownItemProps, Message } from "semantic-ui-react";
+import { cloneDeep } from "lodash";
 
 interface Props {
 	editing?: boolean
@@ -25,6 +24,7 @@ enum OpenModal {
 	Print,
 }
 
+// @TODO This needs a little bit of cleanup
 export const PartView: FC<Props> = ({ editing }: Props) => {
 	const { id } = useParams();
 
@@ -33,6 +33,7 @@ export const PartView: FC<Props> = ({ editing }: Props) => {
 	const [ message, setMessage ] = useState<ErrorMessage>();
 
 	const [ editedPart, setEditedPart ] = useState<models.Part>();
+	const [ hasEdited, setHasEdited ] = useState(false);
 	const [ availableStorage, setAvailableStorage ] = useState<DropdownItemProps[]>();
 
 	const [ modal, setModal ] = useState<OpenModal>(OpenModal.None)
@@ -92,7 +93,12 @@ export const PartView: FC<Props> = ({ editing }: Props) => {
 				// @TODO Figure out a way to remove the edit page from the history,
 				// but only if we came from PartDetail
 				// @TODO Ask the user if they are sure
-				setModal(OpenModal.Discard)
+				if (hasEdited) {
+					setModal(OpenModal.Discard)
+				} else {
+					navigate("..")
+					setMessage(undefined)
+				}
 			},
 		},
 		{
@@ -104,11 +110,12 @@ export const PartView: FC<Props> = ({ editing }: Props) => {
 				}
 
 				setLoading({...loading, save: true})
-				setMessage(undefined)
 				
 				Part.Update(editedPart).then(resp => {
 					setPart(resp)
 					navigate("..")
+					setMessage(undefined)
+					setHasEdited(false);
 				}).catch(handleError(setMessage)).finally(() => {
 					setLoading({...loading, save: false})
 				})
@@ -152,89 +159,23 @@ export const PartView: FC<Props> = ({ editing }: Props) => {
 		}
 	];
 
-	const functionsEdit: PartEditFunctions = {
-		onChange: (event: ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
-			if (editedPart === undefined) {
-				return
+	const addStorage = (name: string, callback: (id: models.ID) => void) => {
+		setLoading({...loading, options: true})
+
+		Storage.Create({...models.Storage.defaultValue(), name}).then(resp => {
+			let options = [transformStorageToOption(resp)];
+			if (availableStorage !== undefined) {
+				options = [...availableStorage, transformStorageToOption(resp)];
 			}
 
-			const newState = cloneDeepWith(editedPart)
-			switch (event.target.name) {
-				case "name":
-				case "footprint":
-				case "description":
-				newState[event.target.name] = event.target.value;
-					break;
+			setAvailableStorage(options);
 
-				case "quantity":
-				newState.quantity = parseInt(event.target.value);
-					break;
-
-				case "link":
-				// @TODO Find a better solution to gettnig the indx then using the html id
-					newState.links[Number(event.target.id)].url = event.target.value;
-					break;
-
-				default:
-				console.error("UNKNOWN NAME", event.target.name, event)
-			}
-
-			setEditedPart(newState);
-		},
-		onChangeStorage: (_event: SyntheticEvent<HTMLElement>, data: DropdownProps) => {
-			if (editedPart === undefined) {
-				return
-			}
-
-			// @TODO if the storage is being created data.value will instead hold the text value...
-			const newState = cloneDeepWith(editedPart)
-			newState.storageId = {...models.ID.defaultValue(), id: data.value as string}
-
-			setEditedPart(newState)
-		},
-		onAddStorage: (_event: SyntheticEvent<HTMLElement>, data: DropdownProps) => {
-			if (editedPart === undefined) {
-				return
-			}
-
-			setLoading({...loading, options: true})
-
-			Storage.Create({...models.Storage.defaultValue(), name: data.value as string}).then(resp => {
-				let options = [transformStorageToOption(resp)];
-				if (availableStorage !== undefined) {
-					options = [...availableStorage, transformStorageToOption(resp)];
-				}
-
-				setAvailableStorage(options);
-
-				const newState = cloneDeep(editedPart);
-				newState.storageId = resp.id;
-				setEditedPart(newState);
-			}).catch(handleError(setMessage)).finally(() => {
-				setLoading({...loading, options: false})
-			})
-		},
-		onRemoveUrl: (index: number) => {
-			if (editedPart === undefined) {
-				return
-			}
-
-			const newState = cloneDeepWith(editedPart)
-			newState.links.splice(index, 1)
-
-			setEditedPart(newState)
-		},
-		onAddUrl: () => {
-			if (editedPart === undefined) {
-				return
-			}
-
-			const newState = cloneDeepWith(editedPart)
-			newState.links.push(models.Link.defaultValue())
-
-			setEditedPart(newState)
-		}
+			callback(resp.id)
+		}).catch(handleError(setMessage)).finally(() => {
+			setLoading({...loading, options: false})
+		})
 	}
+
 
 	if (notFound) {
 		return (<NotFound />);
@@ -271,6 +212,7 @@ export const PartView: FC<Props> = ({ editing }: Props) => {
 			onConfirm={() => {
 				navigate("..")
 				setMessage(undefined)
+				setHasEdited(false);
 				setModal(OpenModal.None)
 			}}
 		/>
@@ -300,7 +242,7 @@ export const PartView: FC<Props> = ({ editing }: Props) => {
 		<Modals />
 		<Toolbar name={part?.name} loading={loading} functions={editing ? toolbarEdit : toolbarDetail} />
 		{ (editing
-			&& <PartEdit part={editedPart} availableStorage={availableStorage} functions={functionsEdit} loading={loading} attached={message !== undefined} />)
+			&& <PartEdit part={editedPart} availableStorage={availableStorage} addStorage={addStorage} updatePart={(part) => {setHasEdited(true); setEditedPart(part)}} loading={loading} attached={message !== undefined} />)
 			|| <PartDetail part={part} loading={loading} attached={message !== undefined} />
 		}
 	{ message && <Message onDismiss={() => setMessage(undefined)} attached="bottom" info={message.severity === "info"} warning={message.severity === "warning"} error={message.severity === "error"} success={message.severity === "success"} header={message.header} content={message.details} icon={message.icon} /> }

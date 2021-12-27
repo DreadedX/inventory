@@ -8,10 +8,28 @@ import { Header, Icon, Placeholder, Segment } from "semantic-ui-react";
 
 const instance = new Worker()
 
-const useUserMedia = (req: MediaStreamConstraints) => {
-	const [ mediaStream, setMediaStream ] = useState<MediaStream>()
+export const useHasCamera = () => {
+	const [ hasCamera, setHasCamera ] = useState<boolean | undefined>(undefined);
 
 	useEffect(() => {
+		navigator.mediaDevices.enumerateDevices().then(devices => {
+			const count = devices.filter((device) => device.kind === "videoinput").length
+			setHasCamera(count > 0)
+		})
+	}, [])
+
+	return hasCamera
+}
+
+const useUserMedia = (req: MediaStreamConstraints): [ boolean | undefined, MediaStream | undefined] => {
+	const [ mediaStream, setMediaStream ] = useState<MediaStream>();
+	const hasCamera = useHasCamera();
+
+	useEffect(() => {
+		if (!hasCamera) {
+			return
+		}
+
 		if (!mediaStream) {
 			navigator.mediaDevices.getUserMedia(req).then(stream => {
 				setMediaStream(stream);
@@ -25,21 +43,9 @@ const useUserMedia = (req: MediaStreamConstraints) => {
 				});
 			}
 		}
-	}, [mediaStream, req])
+	}, [hasCamera, mediaStream, req])
 
-	return mediaStream;
-}
-
-export const useHasCamera = () => {
-	const [ hasCamera, setHasCamera ] = useState<boolean | undefined>(undefined);
-
-	useEffect(() => {
-		navigator.mediaDevices.enumerateDevices().then(devices => {
-			setHasCamera(devices.length > 0)
-		})
-	}, [])
-
-	return hasCamera
+	return [ hasCamera, mediaStream ];
 }
 
 const CAPTURE_OPTIONS: MediaStreamConstraints = {
@@ -54,8 +60,7 @@ interface Props {
 export const QrScanner: FC<Props> = ({ onScan }: Props) => {
 	const videoRef = useRef<HTMLVideoElement>(null);
 	const canvasRef = useRef<HTMLCanvasElement>(null);
-	const mediaStream = useUserMedia(CAPTURE_OPTIONS);
-	const hasCamera = useHasCamera();
+	const [ hasCamera, mediaStream ] = useUserMedia(CAPTURE_OPTIONS);
 
 	useEffect(() => {
 		requestAnimationFrame(scan)

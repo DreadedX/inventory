@@ -23,22 +23,11 @@ export const Normal = Template.bind({})
 Normal.args = {
 	part: PartDetailStories.Normal.args?.part,
 	loading: {...LoadingStatus.defaultValue(), fetch: false, options: false},
-	functions: {
-		onChange: () => {
-			console.log("CHANGE");
-		},
-		onChangeStorage: () => {
-			console.log("CHANGE_STORAGE");
-		},
-		onAddStorage: () => {
-			console.log("ADD_STORAGE");
-		},
-		onAddUrl: () => {
-			console.log("ADD_URL");
-		},
-		onRemoveUrl: () => {
-			console.log("REMOVE_URL");
-		},
+	addStorage: (name, ) => {
+		console.log(name)
+	},
+	updatePart: (part) => {
+		console.log(part)
 	}
 }
 
@@ -46,14 +35,16 @@ export const Empty = Template.bind({})
 Empty.args = {
 	part: models.Part.defaultValue(),
 	loading: {...LoadingStatus.defaultValue(), fetch: false, options: false},
-	functions: Normal.args.functions
+	addStorage: Normal.args.addStorage,
+	updatePart: Normal.args.updatePart
 }
 
 export const Attached = Template.bind({})
 Attached.args = {
 	part: Normal.args.part,
 	loading: {...LoadingStatus.defaultValue(), fetch: false, options: false},
-	functions: Normal.args.functions,
+	addStorage: Normal.args.addStorage,
+	updatePart: Normal.args.updatePart,
 	attached: true
 }
 
@@ -61,19 +52,22 @@ export const LoadingPart = Template.bind({})
 LoadingPart.args = {
 	part: undefined,
 	loading: {...LoadingStatus.defaultValue(), fetch: true, options: false},
-	functions: Normal.args.functions
+	addStorage: Normal.args.addStorage,
+	updatePart: Normal.args.updatePart
 }
 
 export const LoadingOptions = Template.bind({})
 LoadingOptions.args = {
 	part: undefined,
 	loading: {...LoadingStatus.defaultValue(), fetch: false, options: true},
-	functions: Normal.args.functions
+	addStorage: Normal.args.addStorage,
+	updatePart: Normal.args.updatePart
 }
 
 export const Saving = Template.bind({})
 Saving.args = {
 	part: undefined,
 	loading: {...LoadingStatus.defaultValue(), fetch: false, options: false, save: true},
-	functions: Normal.args.functions
+	addStorage: Normal.args.addStorage,
+	updatePart: Normal.args.updatePart
 }

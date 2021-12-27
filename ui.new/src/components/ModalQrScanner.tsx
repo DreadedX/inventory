@@ -9,7 +9,6 @@ interface Props {
 }
 
 export const ModalQrScanner: FC<Props> = ({ open, onScan, onCancel }: Props) => {
-
 	return (<Modal
 		open={open}
 		onClose={() => {
