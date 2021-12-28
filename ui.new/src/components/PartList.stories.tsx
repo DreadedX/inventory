@@ -1,4 +1,4 @@
-import { PartDetail } from ".";
+import { PartList } from ".";
 import { ComponentStory, ComponentMeta } from "@storybook/react";
 import { Container } from "semantic-ui-react";
 import * as models from "../models/models.pb";
@@ -6,20 +6,20 @@ import * as models from "../models/models.pb";
 import { LoadingStatus } from "../lib/loading";
 
 export default {
-	title: "PartDetail",
-	component: PartDetail,
+	title: "PartList",
+	component: PartList,
 	decorators: [
 		(Story) => (<Container>
 			{Story()}
 		</Container>)
 	]
-} as ComponentMeta<typeof PartDetail>;
+} as ComponentMeta<typeof PartList>;
 
-const Template: ComponentStory<typeof PartDetail> = (args) => <PartDetail {...args} />;
+const Template: ComponentStory<typeof PartList> = (args) => <PartList {...args} />;
 
 export const Normal = Template.bind({})
 Normal.args = {
-	part: {
+	parts: [{
 		...models.Part.defaultValue(),
 		name: "Resistor",
 		description: " Lorem ipsum dolor sit amet, consectetur adipiscing elit. Suspendisse pretium, ex id pulvinar volutpat, urna magna pretium diam, eget consectetur eros ipsum at nisi. Suspendisse eleifend elit sit amet ipsum gravida congue. Duis sed maximus diam. Aenean hendrerit ante quis elementum fermentum. Vestibulum gravida nunc est. Nullam id mauris tempus, lacinia arcu a, elementum dui. Proin sodales rutrum justo. Curabitur viverra libero suscipit arcu congue porttitor. Nunc nec ullamcorper sapien. Suspendisse potenti. Donec aliquet, mauris ac dapibus pretium, nibh nibh mattis justo, vitae mollis erat tortor eu justo. Praesent quis lacinia risus, quis maximus ipsum. Maecenas vel dui vitae mauris pulvinar feugiat a quis risus. ",
@@ -43,31 +43,18 @@ Normal.args = {
 				url: "huizinga.dev"
 			}
 		]
-	},
-	loading: {...LoadingStatus.defaultValue(), fetch: false}
+	}],
+	loading: false
 }
 
 export const Empty = Template.bind({})
 Empty.args = {
-	part: models.Part.defaultValue(),
-	loading: {...LoadingStatus.defaultValue(), fetch: false}
-}
-
-export const NormalAttached = Template.bind({})
-NormalAttached.args = {
-	part: Normal.args.part,
-	loading: {...LoadingStatus.defaultValue(), fetch: false},
-	attached: true
+	parts: [],
+	loading: false
 }
 
 export const Loading = Template.bind({})
 Loading.args = {
-	part: undefined,
-	loading: {...LoadingStatus.defaultValue(), fetch: true}
-}
-
-export const Delete = Template.bind({})
-Delete.args = {
-	part: Normal.args.part,
-	loading: {...LoadingStatus.defaultValue(), delete: true}
+	parts: [],
+	loading: true
 }

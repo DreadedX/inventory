@@ -4,9 +4,11 @@ import { PartView, PartsView } from "./views";
 import { BrowserRouter, Routes, Route, Outlet } from "react-router-dom";
 
 import "semantic-ui-css/semantic.min.css"
+import { Navigation } from "./components";
 
 const App: FC = () => {
 	return (<BrowserRouter>
+		<Navigation />
 		<Container style={{ margin: "3em" }}>
 			<Routes>
 				<Route path="part" element={<Outlet />} >

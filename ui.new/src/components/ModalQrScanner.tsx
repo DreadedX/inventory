@@ -6,16 +6,17 @@ interface Props {
 	open: boolean
 	onScan: (content: string) => void
 	onCancel: () => void
+	hint?: string
 }
 
-export const ModalQrScanner: FC<Props> = ({ open, onScan, onCancel }: Props) => {
+export const ModalQrScanner: FC<Props> = ({ open, onScan, onCancel, hint="Scan QR code" }: Props) => {
 	return (<Modal
 		open={open}
 		onClose={() => {
 			onCancel()
 		}}>
 		<Modal.Header>
-			Scan QR code
+			{hint}
 		</Modal.Header>
 		<Modal.Content>
 			<QrScanner onScan={onScan} />

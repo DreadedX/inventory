@@ -5,7 +5,6 @@ import * as models from "../models/models.pb";
 
 import * as PartDetailStories from "./PartDetail.stories";
 import { LoadingStatus } from "../lib/loading";
-import { functions } from "lodash";
 
 export default {
 	title: "PartEdit",

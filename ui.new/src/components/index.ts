@@ -1,8 +1,9 @@
+export { Navigation } from "./Navigation";
 export { NotFound } from "./NotFound";
 export { PartDetail } from "./PartDetail";
 export { PartList } from "./PartList";
 export { PartEdit } from "./PartEdit";
-export { Toolbar } from "./Toolbar";
+export { Toolbar, ToolbarSearch } from "./Toolbar";
 export { ModalDelete } from "./ModalDelete";
 export { ModalDiscard } from "./ModalDiscard";
 export { ModalPrint } from "./ModalPrint";

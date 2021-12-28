@@ -93,6 +93,7 @@ export const PartView: FC<Props> = ({ editing }: Props) => {
 				// @TODO Figure out a way to remove the edit page from the history,
 				// but only if we came from PartDetail
 				// @TODO Ask the user if they are sure
+				// @TODO We should also ask this if we are about no navigate away
 				if (hasEdited) {
 					setModal(OpenModal.Discard)
 				} else {
@@ -176,7 +177,7 @@ export const PartView: FC<Props> = ({ editing }: Props) => {
 		})
 	}
 
-
+	// @TODO Redirect people to the 404 page
 	if (notFound) {
 		return (<NotFound />);
 	}

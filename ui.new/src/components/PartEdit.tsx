@@ -104,7 +104,7 @@ export const PartEdit: FC<Props> = ({ part, availableStorage, addStorage, update
 	}
 
 	return (<Fragment>
-		<ModalQrScanner open={scannerOpen} onCancel={() => setScannerOpen(false)} onScan={(result => {
+		<ModalQrScanner hint="Scan storage QR code" open={scannerOpen} onCancel={() => setScannerOpen(false)} onScan={(result => {
 			// @TODO Actually make this check work properly
 			// Also give feedback to the user
 			if (part === undefined) {

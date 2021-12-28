@@ -15,8 +15,8 @@ const Field: FC<FieldProps & Record<string, any>> = ({ label, value, loading, pl
 	return (<Form.Field {...props}>
 		<label>{label}</label>
 		{ (loading
-			&& <Placeholder style={{margin: '0em 1em'}}><Placeholder.Line length="medium" /></Placeholder>)
-			|| <p style={{margin: '0em 1em'}}>{value || placeholder || "-"}</p> 
+			&& <Placeholder style={{margin: '0em 0.6em'}}><Placeholder.Line length="medium" /></Placeholder>)
+			|| <p style={{margin: '0em 0.6em'}}>{value || placeholder || "-"}</p> 
 		}
 	</Form.Field>)
 }
@@ -59,12 +59,12 @@ export const PartDetail: FC<Props> = ({ part, loading, attached }: Props) => {
 
 				<Field width={16} label="Description" value={part?.description} loading={loading.fetch}/>
 
-				<Form.Field>
+				{ part?.links && part?.links.length > 0 && <Form.Field>
 					<label>Links</label>
 					{ part?.links?.map((link, index) => (<FieldLink link={link} key={index} />)) }
-				</Form.Field>
+				</Form.Field> }
 			</Form>
 		</Segment>
-		{ outOfStock && <Message attached={attached ? true : "bottom"} warning content="No stock left"/> }
+		{ outOfStock && <Message attached={attached ? true : "bottom"} warning icon="exclamation circle" header="No stock left"/> }
 	</Fragment>)
 }
