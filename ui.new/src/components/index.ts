@@ -1,6 +1,7 @@
 export { Navigation } from "./Navigation";
 export { NotFound } from "./NotFound";
 export { PartDetail } from "./PartDetail";
+export { StorageDetail } from "./StorageDetail";
 export { PartList } from "./PartList";
 export { PartEdit } from "./PartEdit";
 export { Toolbar, ToolbarSearch } from "./Toolbar";
