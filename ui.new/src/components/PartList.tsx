@@ -33,7 +33,7 @@ export const PartList: FC<Props> = ({ parts, loading, showStorage, attached }) =
 
 	useEffect(() => {
 		setNoParts(!loading && parts?.length == 0)
-	}, [parts])
+	}, [parts, loading])
 
 	return (<Fragment>
 		<Table unstackable selectable attached={(attached || noParts || loading) ? true : "bottom"}>

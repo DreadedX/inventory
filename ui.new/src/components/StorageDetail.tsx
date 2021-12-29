@@ -9,6 +9,7 @@ interface Props {
 	attached?: boolean
 }
 
+// This is quite litterally a wrapper around PartList...
 export const StorageDetail: FC<Props> = ({ storage, loading, attached }) => {
 	return (<Fragment>
 		<PartList parts={storage?.parts || []} loading={loading.fetch} attached={attached} />

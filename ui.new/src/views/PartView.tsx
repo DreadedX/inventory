@@ -6,6 +6,7 @@ import { ToolbarFunction } from "../components/Toolbar";
 import { transformStorageToOption } from "../lib/helpers";
 import { ErrorMessage, handleError } from "../lib/error";
 import { LoadingStatus } from "../lib/loading";
+import { OpenModal } from "../lib/modal";
 import * as models from "../models/models.pb";
 import * as Part from "../handlers/part/part.pb";
 import * as Storage from "../handlers/storage/storage.pb";
@@ -15,13 +16,6 @@ import { cloneDeep } from "lodash";
 
 interface Props {
 	editing?: boolean
-}
-
-enum OpenModal {
-	None,
-	Remove,
-	Discard,
-	Print,
 }
 
 // @TODO This needs a little bit of cleanup
@@ -37,9 +31,6 @@ export const PartView: FC<Props> = ({ editing }: Props) => {
 	const [ availableStorage, setAvailableStorage ] = useState<DropdownItemProps[]>();
 
 	const [ modal, setModal ] = useState<OpenModal>(OpenModal.None)
-	// const [ modalOpen, setModalOpen ] = useState<boolean>(false);
-	// const [ modal, setModal ] = useState<JSX.Element>();
-
 	const [ labelPreview, setLabelPreview ] = useState<string>();
 
 	const [ loading, setLoading ] = useState<LoadingStatus>(LoadingStatus.defaultValue())
