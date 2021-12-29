@@ -1,22 +1,21 @@
 FROM golang:alpine as build-proto
 RUN apk add protoc bash
 
-WORKDIR /src
+WORKDIR /src/proto
 
-RUN mkdir ./proto
-COPY proto/go.mod ./proto
-COPY proto/go.sum ./proto
-COPY proto/install.sh ./proto
-RUN cd proto && ./install.sh
+COPY proto/go.mod .
+COPY proto/go.sum .
+COPY proto/install.sh .
+RUN ./install.sh
 
-RUN mkdir ./server ./printer
-COPY proto proto
-RUN cd proto && ./generate.sh
+RUN mkdir ../server ../printer
+COPY proto .
+RUN ./generate.sh
 
 
 FROM golang:alpine as build-server
 
-WORKDIR /src
+WORKDIR /src/server
 COPY server/go.mod .
 COPY server/go.sum .
 RUN go mod download
@@ -29,19 +28,24 @@ RUN go build
 
 FROM node:alpine as build-ui
 
-RUN apk add protoc
+RUN apk add protoc git bash
 
-WORKDIR /src
+WORKDIR /git
+RUN git clone https://github.com/Semantic-Org/Semantic-UI-CSS
+RUN cd Semantic-UI-CSS && yarn link
+
+WORKDIR /src/ui
 COPY ui/package.json .
 COPY ui/yarn.lock .
 RUN yarn
+RUN yarn link semantic-ui-css
 
 COPY --from=build-proto /src/proto ../proto
 COPY ui .
 
-RUN yarn twirpscript
+RUN cd ../proto && ls ../ui/node_modules/twirpscript && ./generate_twirpscript.sh
 
-ENV NODE_OPTIONS=--openssl-legacy-provider
+# ENV NODE_OPTIONS=--openssl-legacy-provider
 RUN yarn build
 
 
@@ -58,9 +62,9 @@ RUN cd ./printer && pip install -r requirements.txt
 COPY --from=build-proto /src/printer ./printer
 COPY printer ./printer
 
-COPY --from=build-server /src/fonts fonts
-COPY --from=build-server /src/inventory .
-COPY --from=build-ui /src/build ./ui
+COPY --from=build-server /src/server/fonts fonts
+COPY --from=build-server /src/server/inventory .
+COPY --from=build-ui /src/ui/build ./ui
 
 ENV GIN_MODE=release
 CMD ["./inventory"]
