@@ -125,11 +125,10 @@ export const PartEdit: FC<Props> = ({ part, availableStorage, addStorage, update
 		<Segment color="grey" attached={(attached) ? true : "bottom"}>
 			<Form loading={loading.fetch || loading.save}>
 				<Form.Group>
-					<Form.Input width={12} label="Name" name="name" placeholder="No name..." value={part?.name} onChange={onChange} />
-					<Form.Input width={4} label="Footprint" name="footprint" placeholder="No footprint..." value={part?.footprint} onChange={onChange} />
-				</Form.Group>
+					<Form.Input width={5} label="Name" name="name" placeholder="Name..." value={part?.name} onChange={onChange} />
+					<Form.Input width={2} label="Footprint" name="footprint" placeholder="Footprint..." value={part?.footprint} onChange={onChange} />
+					<Form.Input min={0} width={2} label="Quantity" type="number" name="quantity" placeholder="0" value={part?.quantity} onChange={onChange} />
 
-				<Form.Group>
 					<Form.Field>
 						<label>Storage</label>
 						<Form.Dropdown name="storage" placeholder="No storage..." value={part?.storageId.id || ""} allowAdditions clearable search selection additionLabel="Create storage: " options={availableStorage} onAddItem={onAddStorage} onChange={onChangeStorage} loading={loading.options} />
@@ -140,12 +139,11 @@ export const PartEdit: FC<Props> = ({ part, availableStorage, addStorage, update
 						<Form.Button type="button" icon="qrcode" onClick={() => setScannerOpen(true)} />
 					</Form.Field>}
 
-					<Form.Input min={0} width={2} label="Quantity" type="number" name="quantity" value={part?.quantity} onChange={onChange} />
 				</Form.Group>
 
 				<Form.Field>
 					<label>Description</label>
-					<TextareaAutosize minRows={10} name="description" placeholder="No description..." value={part?.description} onChange={onChange} />
+					<TextareaAutosize minRows={10} name="description" placeholder="Description..." value={part?.description} onChange={onChange} />
 				</Form.Field>
 
 				<Form.Field width={8}>

@@ -2,29 +2,29 @@ import { FC, Fragment, useEffect, useState } from "react";
 import { ErrorMessage, handleError } from "../lib/error";
 
 import * as models from "../models/models.pb";
-import * as Part from "../handlers/part/part.pb";
+import * as Storage from "../handlers/storage/storage.pb";
 import { TwirpError } from "twirpscript/dist/runtime/error";
-import { PartList } from "../components";
+import { StorageList } from "../components";
 import { LoadingStatus } from "../lib/loading";
 import { ToolbarSearch, ToolbarFunction } from "../components/Toolbar";
 import { Message } from "semantic-ui-react";
 
-export const PartsView: FC = () => {
-	const [ parts, setParts ] = useState<models.Part[]>([]);
+export const StoragesView: FC = () => {
+	const [ storage, setStorage ] = useState<models.Storage[]>([]);
 	const [ message, setMessage ] = useState<ErrorMessage>();
 
 	const [ loading, setLoading ] = useState(false)
 
 	useEffect(() => {
-		setParts([])
+		setStorage([])
 		setMessage(undefined)
 		setLoading(true)
 
-		Part.FetchAll({}).then(resp => {
-			setParts(resp.parts)
+		Storage.FetchAll({}).then(resp => {
+			setStorage(resp.storages)
 		}).catch(handleError(setMessage, (e: TwirpError) => {
 			if (e.code === "not_found") {
-				setMessage({severity: "info", icon: "question", header: "No parts found!", details: "There are no known parts, try adding some"})
+				setMessage({severity: "info", icon: "question", header: "No storage found!", details: "There are no known storage, try adding some"})
 				return true;
 			}
 			return false;
@@ -48,8 +48,8 @@ export const PartsView: FC = () => {
 	}
 
 	return (<Fragment>
-		<ToolbarSearch onSearch={onSearch} hint="Search part..." loading={{...LoadingStatus.defaultValue(), fetch: false}} functions={toolbar} />
-		<PartList parts={parts} loading={loading} showStorage attached={message !== undefined}/>
+		<ToolbarSearch onSearch={onSearch} hint="Search storage..." loading={{...LoadingStatus.defaultValue(), fetch: false}} functions={toolbar} />
+		<StorageList storage={storage} loading={loading} attached={message !== undefined}/>
 		{ message && <Message onDismiss={() => setMessage(undefined)} attached="bottom" info={message.severity === "info"} warning={message.severity === "warning"} error={message.severity === "error"} success={message.severity === "success"} header={message.header} content={message.details} icon={message.icon} /> }
 	</Fragment>)
 }

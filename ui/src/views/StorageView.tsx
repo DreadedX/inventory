@@ -7,8 +7,9 @@ import * as models from "../models/models.pb";
 import * as Storage from "../handlers/storage/storage.pb";
 import * as Label from "../handlers/label/label.pb";
 import { TwirpError } from "twirpscript/dist/runtime/error";
-import { ModalDelete, ModalDiscard, ModalPrint, NotFound, StorageDetail, Toolbar } from "../components";
+import { ModalDelete, ModalDiscard, ModalPrint, NotFound, StorageDetail, StorageEdit, Toolbar } from "../components";
 import { ToolbarFunction } from "../components/Toolbar";
+import { cloneDeep } from "lodash";
 
 interface Props {
 	editing?: boolean
@@ -21,12 +22,19 @@ export const StorageView: FC<Props> = ({ editing }: Props) => {
 	const [ notFound, setNotFound ] = useState<boolean>(false);
 	const [ message, setMessage ] = useState<ErrorMessage>();
 
+	const [ editedStorage, setEditedStorage ] = useState<models.Storage>();
+	const [ hasEdited, setHasEdited ] = useState(false);
+
 	const [ modal, setModal ] = useState<OpenModal>(OpenModal.None)
 	const [ labelPreview, setLabelPreview ] = useState<string>();
 
 	const [ loading, setLoading ] = useState<LoadingStatus>(LoadingStatus.defaultValue())
 
 	const navigate = useNavigate();
+
+	useEffect(() => {
+		setEditedStorage(cloneDeep(storage))
+	}, [storage])
 
 	useEffect(() => {
 		setLoading({...loading, fetch: storage === undefined})
@@ -56,7 +64,45 @@ export const StorageView: FC<Props> = ({ editing }: Props) => {
 		return (<NotFound />)
 	}
 
-	const toolbar: ToolbarFunction[] = [
+	const toolbarEdit: ToolbarFunction[] = [
+		{
+			icon: "cancel",
+			on: () => {
+				// @TODO Figure out a way to remove the edit page from the history,
+				// but only if we came from PartDetail
+				// @TODO Ask the user if they are sure
+				// @TODO We should also ask this if we are about no navigate away
+				if (hasEdited) {
+					setModal(OpenModal.Discard)
+				} else {
+					navigate("..")
+					setMessage(undefined)
+				}
+			},
+		},
+		{
+			icon: "save",
+			on: () => {
+				// We should not be able to press the button if there is no part loaded
+				if (storage === undefined || editedStorage === undefined) {
+					return
+				}
+
+				setLoading({...loading, save: true})
+				
+				Storage.Update(editedStorage).then(resp => {
+					setStorage(resp)
+					navigate("..")
+					setMessage(undefined)
+					setHasEdited(false);
+				}).catch(handleError(setMessage)).finally(() => {
+					setLoading({...loading, save: false})
+				})
+			},
+		}
+	];
+
+	const toolbarDetails: ToolbarFunction[] = [
 		{
 			icon: "plus",
 			on: () => {
@@ -87,8 +133,8 @@ export const StorageView: FC<Props> = ({ editing }: Props) => {
 			on: () => {
 				setMessage(undefined)
 				console.log("EDIT STORAGE")
-				// setEditedPart(cloneDeep(part))
-				// navigate("./edit")
+				setEditedStorage(cloneDeep(storage))
+				navigate("./edit")
 			},
 		},
 		{
@@ -132,8 +178,8 @@ export const StorageView: FC<Props> = ({ editing }: Props) => {
 			onConfirm={() => {
 				navigate("..")
 				setMessage(undefined)
-				// setHasEdited(false);
-				// setModal(OpenModal.None)
+				setHasEdited(false);
+				setModal(OpenModal.None)
 			}}
 		/>
 
@@ -159,9 +205,9 @@ export const StorageView: FC<Props> = ({ editing }: Props) => {
 
 	return (<Fragment>
 		<Modals />
-		<Toolbar name={storage?.name} loading={loading} functions={toolbar} />
+		<Toolbar name={storage?.name} loading={loading} functions={editing ? toolbarEdit : toolbarDetails} />
 		{ editing
-			? <p>EDIT</p>
+			? <StorageEdit storage={editedStorage} loading={loading} attached={message !== undefined} updateStorage={(storage) => {setHasEdited(true); setEditedStorage(storage)}}  />
 			: <StorageDetail storage={storage} loading={loading} attached={message !== undefined}/>
 		}
 	</Fragment>);
