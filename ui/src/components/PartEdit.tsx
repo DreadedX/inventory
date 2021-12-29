@@ -1,211 +1,161 @@
-import { FC, Fragment, ChangeEvent, SyntheticEvent, KeyboardEvent, useState, useEffect } from 'react';
-import { useHistory } from 'react-router';
-import { Segment, Form, Message, DropdownProps, DropdownItemProps, Menu, Icon, Input, Button } from 'semantic-ui-react';
+import { ChangeEvent, FC, Fragment, SyntheticEvent, useState } from "react";
 import TextareaAutosize from 'react-textarea-autosize';
-import { Qr } from '../components/Qr';
-import { ID, Link, Part, Storage } from '../models/models.pb';
-import { Create as CreateStorage, FetchAll } from '../handlers/storage/storage.pb';
-import { isTwirpError } from 'twirpscript/dist/runtime/error';
-import { Create, Update } from '../handlers/part/part.pb';
-import { Type } from '../handlers/label/label.pb';
+import * as models from "../models/models.pb";
+import { Button, DropdownItemProps, DropdownProps, Form, Input, Segment } from "semantic-ui-react";
+import { LoadingStatus } from "../lib/loading";
 
-interface Props {
-	part: Part
-	setPart: (part: Part) => void
-	create?: boolean
+import { ModalQrScanner, useHasCamera } from ".";
+import { cloneDeep } from "lodash";
+
+export interface PartEditFunctions {
+	onChange: (event: ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => void
+	onChangeStorage: (event: SyntheticEvent<HTMLElement>, data: DropdownProps) => void
+	onAddStorage: (_: SyntheticEvent<HTMLElement>, data: DropdownProps) => void
+	onRemoveUrl: (index: number) => void
+	onAddUrl: () => void
 }
 
-export const PartEdit: FC<Props> = ( { part, setPart, create }: Props ) => {
-	const [ name, setName ] = useState<string>(part.name);
-	const [ description, setDescription ] = useState<string>(part.description);
-	const [ footprint, setFootprint ] = useState<string>(part.footprint);
-	const [ quantity, setQuantity ] = useState<number>(part.quantity);
-	const [ storageID, setStorageID ] = useState<ID>(part.storageId || "");
-	const [ links, setLinks ] = useState<Link[]>(part.links || []);
+interface Props {
+	part: models.Part | undefined
+	availableStorage: DropdownItemProps[] | undefined
+	addStorage: (name: string, callback: (id: models.ID) => void) => void
+	updatePart: (part: models.Part) => void
+	loading: LoadingStatus
+	attached?: boolean
+}
 
-	const [ storage, setStorage ] = useState<DropdownItemProps[]>([]);
+export const PartEdit: FC<Props> = ({ part, availableStorage, addStorage, updatePart, loading, attached }: Props) => {
+	const hasCamera = useHasCamera();
+	const [ scannerOpen, setScannerOpen ] = useState(false);
 
-	const [ status, setStatus ] = useState<JSX.Element>();
-
-	const [ loading, setLoading ] = useState<boolean>(true);
-	const [ saving, setSaving ] = useState<boolean>(false);
-
-	const history = useHistory();
-
-	useEffect(() => {
-		FetchAll({}).then(resp => {
-			setStorage(resp.storages.map((storage) => {
-				return {
-					key: storage.id.id,
-					value: storage.id.id,
-					text: storage.name
-				}}))
-		}).catch(e => {
-			if (isTwirpError(e)) {
-				if (e.code !== "not_found") {
-					setStatus(<Message attached="bottom" negative header="Failed to load storage options" content={ e.msg } />)
-				}
-			} else {
-				console.error(e)
-				setStatus(<Message attached="bottom" negative header="Failed to load storage options" content="Unknown error occured" />)
-			}
-		}).finally(() => {
-			setLoading(false);
-		})
-	}, []);
-
-	const handleChange = (event: ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
-		if (event.target.name === "name") {
-			setName(event.target.value);
-		} else if (event.target.name === "description") {
-			setDescription(event.target.value);
-		} else if (event.target.name === "footprint") {
-			setFootprint(event.target.value);
-		} else if (event.target.name === "quantity") {
-			setQuantity(Number(event.target.value));
+	const onChange = (event: ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
+		if (part === undefined) {
+			return
 		}
+
+		const newState = cloneDeep(part)
+		switch (event.target.name) {
+			case "name":
+			case "footprint":
+			case "description":
+			newState[event.target.name] = event.target.value;
+				break;
+
+			case "quantity":
+			newState.quantity = parseInt(event.target.value);
+				break;
+
+			case "link":
+			// @TODO Find a better solution to gettnig the indx then using the html id
+				newState.links[Number(event.target.id)].url = event.target.value;
+				break;
+
+			default:
+			console.error("UNKNOWN NAME", event.target.name, event)
+		}
+
+		updatePart(newState);
 	}
 
-	const handleChangeDropdown = (_event: SyntheticEvent<HTMLElement, Event>, data: DropdownProps) => {
-		setStorageID({id: String(data.value)});
+	const onChangeStorage = (_event: SyntheticEvent<HTMLElement>, data: DropdownProps) => {
+		if (part === undefined) {
+			return
+		}
+
+		// @TODO if the storage is being created data.value will instead hold the text value...
+		const newState = cloneDeep(part)
+		newState.storageId = {...models.ID.defaultValue(), id: data.value as string}
+
+		updatePart(newState)
 	}
 
-	const handleChangeUrl = (event: ChangeEvent<HTMLInputElement>, index: number) => {
-		var ls: Link[] = [...links];
-		ls[index].url = event.target.value.replace(/^\/\/|^.*?:(\/\/)?/, '');
-		setLinks(ls)
+	const onRemoveUrl = (index: number) => {
+		if (part === undefined) {
+			return
+		}
+
+		const newState = cloneDeep(part)
+		newState.links.splice(index, 1)
+
+		updatePart(newState)
 	}
 
-	const addStorage = (_event: KeyboardEvent<HTMLElement>, data: DropdownProps) => {
-		setLoading(true)
+	const onAddStorage = (_event: SyntheticEvent<HTMLElement>, data: DropdownProps) => {
+		if (part === undefined) {
+			return
+		}
 
-		CreateStorage({...Storage.defaultValue(), name: String(data.value)}).then(resp => {
-			setStorage([...storage, {
-				key: resp.id.id,
-				value: resp.id.id,
-				text: resp.name
-			}]);
-
-			setStorageID({id: resp.id.id});
-		}).catch(e => {
-			console.error(e);
-			// @todo Show a popup message here
-			// setStatus(<StatusBox icon="times" message={ error.message }/>)
-		}).finally(() => {
-			setLoading(false);
+		addStorage(data.value as string, (id: models.ID) => {
+			const newState = cloneDeep(part);
+			newState.storageId = id;
+			updatePart(newState);
 		})
 	}
 
-	const addUrl = () => {
-		var ls: Link[] = [...links];
-		ls.push(Link.defaultValue());
-		setLinks(ls)
-	}
-
-	const removeUrl = (index: number) => {
-		var ls = [...links];
-		ls.splice(index, 1);
-		setLinks(ls);
-	}
-
-	const save = () => {
-		setSaving(true);
-
-		const newPart = {
-			...Part.defaultValue(),
-			name: name,
-			description: description,
-			footprint: footprint,
-			quantity: quantity,
-			storageId: storageID,
-			links: links
+	const onAddUrl = () => {
+		if (part === undefined) {
+			return
 		}
 
-		console.log(newPart)
+		const newState = cloneDeep(part)
+		newState.links.push(models.Link.defaultValue())
 
-		if (create) {
-			Create(newPart).then(resp => {
-				setPart(resp)
-				history.push("/part/" + resp.id.id)
-			}).catch(e => {
-				if (isTwirpError(e)) {
-					setStatus(<Message attached="bottom" negative header="Failed to create part" content={e.msg} />)
-				} else {
-					setStatus(<Message attached="bottom" negative header="Failed to create part" content="Unknown error occured" />)
-				}
-			}).finally(() => {
-				setSaving(false);
-			})
-		} else {
-			Update({...newPart, id: part.id}).then(resp => {
-				setPart(resp)
-				history.replace("/part/" + resp.id.id)
-			}).catch(e => {
-				if (isTwirpError(e)) {
-					setStatus(<Message attached="bottom" negative header="Failed to save changes" content={e.msg} />)
-				} else {
-					setStatus(<Message attached="bottom" negative header="Failed to save changes" content="Unknown error occured" />)
-				}
-			}).finally(() => {
-				setSaving(false);
-			})
-		}
-	}
-
-	const onScan = (id: string, t: Type) => {
-		if (t === Type.STORAGE) {
-			setStorageID({ id: id });
-		} else {
-			console.error("Not a valid storage code");
-			setStatus(<Message attached="bottom" negative header="QR code not valid" content="The QR code does not contain a valid storage ID" />)
-		}
+		updatePart(newState)
 	}
 
 	return (<Fragment>
-		<Menu attached="top" size="large" text>
-			<Menu.Item header style={{marginLeft: '0.5em'}}>
-				{ name || (create ? "Create part" : "Edit part") }
-			</Menu.Item>
-			{ !create && <Menu.Item position="right" onClick={() => history.replace("/part/" + part.id.id)}>
-				<Icon name="cancel" />
-			</Menu.Item> }
-			<Menu.Item position={create ? "right" : undefined} onClick={save}>
-				<Icon name="save"/>
-			</Menu.Item>
-		</Menu>
-		<Segment color="purple" attached={status ? true : "bottom"} loading={saving}>
-			<Form>
+		<ModalQrScanner hint="Scan storage QR code" open={scannerOpen} onCancel={() => setScannerOpen(false)} onScan={(result => {
+			// @TODO Actually make this check work properly
+			// Also give feedback to the user
+			if (part === undefined) {
+				return
+			}
+
+			if (!result.startsWith("s/")) {
+				console.log("Not a valid storage id")
+				return
+			}
+
+			const newState = cloneDeep(part);
+			newState.storageId = { id: result.slice(2) };
+			updatePart(newState);
+
+			setScannerOpen(false);
+		})} />
+		<Segment color="grey" attached={(attached) ? true : "bottom"}>
+			<Form loading={loading.fetch || loading.save}>
 				<Form.Group>
-					<Form.Input width={12} label="Name" name="name" value={name} onChange={handleChange} />
-					<Form.Input width={4} label="Footprint" name="footprint" value={footprint} onChange={handleChange} />
+					<Form.Input width={12} label="Name" name="name" placeholder="No name..." value={part?.name} onChange={onChange} />
+					<Form.Input width={4} label="Footprint" name="footprint" placeholder="No footprint..." value={part?.footprint} onChange={onChange} />
 				</Form.Group>
 
 				<Form.Group>
-					<Form.Field width={5}>
+					<Form.Field>
 						<label>Storage</label>
-						<Form.Group>
-							<Form.Dropdown name="storage" value={storageID.id || ""} allowAdditions loading={loading} clearable search selection additionLabel="Create storage: " options={storage} onAddItem={addStorage} onChange={handleChangeDropdown} />
-							<Qr trigger={<Form.Button type="button" icon="qrcode"/>} onScan={onScan} />
-						</Form.Group>
+						<Form.Dropdown name="storage" placeholder="No storage..." value={part?.storageId.id || ""} allowAdditions clearable search selection additionLabel="Create storage: " options={availableStorage} onAddItem={onAddStorage} onChange={onChangeStorage} loading={loading.options} />
 					</Form.Field>
 
-					<Form.Input width={2} label="Quantity" type="number" name="quantity" value={quantity} onChange={handleChange} />
+					{ hasCamera && <Form.Field>
+						<label style={{visibility: 'hidden'}}>Scan</label>
+						<Form.Button type="button" icon="qrcode" onClick={() => setScannerOpen(true)} />
+					</Form.Field>}
+
+					<Form.Input min={0} width={2} label="Quantity" type="number" name="quantity" value={part?.quantity} onChange={onChange} />
 				</Form.Group>
 
 				<Form.Field>
 					<label>Description</label>
-					<TextareaAutosize minRows={10} name="description" value={description} onChange={handleChange} />
+					<TextareaAutosize minRows={10} name="description" placeholder="No description..." value={part?.description} onChange={onChange} />
 				</Form.Field>
 
 				<Form.Field width={8}>
 					<label>Links</label>
-					{ links.map((link, index) => (<Form.Field key={index}>
-						<Input action={{color: 'red', icon: 'trash', onClick: () => removeUrl(index)}} label="https://"  value={link.url} onChange={(event) => handleChangeUrl(event, index)} />
+					{part?.links.map((link, index) => (<Form.Field key={index}>
+						<Input id={index} name="link" action={{color: 'red', icon: 'trash', onClick: () => onRemoveUrl(index)}} label="https://"  value={link.url} onChange={onChange} />
 					</Form.Field>))}
-					<Button onClick={addUrl}>Add URL</Button>
+					<Button onClick={onAddUrl}>Add URL</Button>
 				</Form.Field>
 			</Form>
 		</Segment>
-		{ status }
-	</Fragment>);
-};
+	</Fragment>)
+}
