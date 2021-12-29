@@ -3,9 +3,11 @@ package part
 import (
 	"context"
 	"log"
+	"sort"
 
 	"inventory/models"
 
+	"github.com/lithammer/fuzzysearch/fuzzy"
 	"github.com/twitchtv/twirp"
 	"gorm.io/gorm"
 )
@@ -23,6 +25,42 @@ func (s *Server) FetchAll(ctx context.Context, req *FetchAllRequest) (*FetchAllR
 	}
 
 	return &FetchAllResponse{Parts: parts}, nil
+}
+
+// @TODO We should propably just merge this with fetch
+func (s *Server) Search(ctx context.Context, req *SearchRequest) (*SearchResponse, error) {
+	var parts []*models.Part
+	s.DB.Order("name ASC").Joins("Storage").Find(&parts)
+
+	if len(req.Query) > 0 {
+		// @TODO Improve the search system
+		// Currently we just create one large string containing all the properties and then perform a fuzzy search
+		// Instead I want each word of the query to only match within one property, this should prevent weird results from showing up
+		// Currently not so sure on how to do it
+		var values []string
+		for _, part := range parts {
+			v := part.Name + " " + part.Description + " " + part.Footprint
+			if part.Storage != nil {
+				v += part.Storage.Name
+			}
+			values = append(values, v)
+		}
+		ranks := fuzzy.RankFindNormalizedFold(req.Query, values)
+
+		sort.Sort(ranks)
+
+		var temp []*models.Part
+		for _, rank := range ranks {
+			temp = append(temp, parts[rank.OriginalIndex])
+		}
+		parts = temp
+	}
+
+	if len(parts) == 0 {
+		return nil, twirp.NewError(twirp.NotFound, "No parts found!")
+	}
+
+	return &SearchResponse{Parts: parts}, nil
 }
 
 func (s *Server) Fetch(ctx context.Context, id *models.ID) (*models.Part, error) {

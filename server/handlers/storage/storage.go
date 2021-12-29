@@ -3,7 +3,9 @@ package storage
 import (
 	"context"
 	"inventory/models"
+	"sort"
 
+	"github.com/lithammer/fuzzysearch/fuzzy"
 	"github.com/twitchtv/twirp"
 	"gorm.io/gorm"
 )
@@ -24,8 +26,42 @@ func (s *Server) FetchAll(ctx context.Context, req *FetchAllRequest) (*FetchAllR
 		storages[i].PartCount = int32(s.DB.Model(&storage).Association("Parts").Count())
 	}
 
-
 	return &FetchAllResponse{Storages: storages}, nil
+}
+
+// @TODO See part search
+func (s *Server) Search(ctx context.Context, req *SearchRequest) (*SearchResponse, error) {
+	var storages []*models.Storage
+	s.DB.Order("name ASC").Find(&storages)
+
+	if len(req.Query) > 0 {
+		// @TODO See part search
+		var values []string
+		for _, storage := range storages {
+			// @TODO Maybe also allow searching through the parts contained within?
+			v := storage.Name
+			values = append(values, v)
+		}
+		ranks := fuzzy.RankFindNormalizedFold(req.Query, values)
+
+		sort.Sort(ranks)
+
+		var temp []*models.Storage
+		for _, rank := range ranks {
+			temp = append(temp, storages[rank.OriginalIndex])
+		}
+		storages = temp
+	}
+
+	if len(storages) == 0 {
+		return nil, twirp.NewError(twirp.NotFound, "No storage found!")
+	}
+
+	for i, storage := range storages {
+		storages[i].PartCount = int32(s.DB.Model(&storage).Association("Parts").Count())
+	}
+
+	return &SearchResponse{Storages: storages}, nil
 }
 
 func (s *Server) Fetch(ctx context.Context, id *models.ID) (*models.Storage, error) {

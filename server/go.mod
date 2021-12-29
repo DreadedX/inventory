@@ -15,6 +15,7 @@ require (
 	github.com/json-iterator/go v1.1.11 // indirect
 	github.com/leodido/go-urn v1.2.1 // indirect
 	github.com/lib/pq v1.6.0 // indirect
+	github.com/lithammer/fuzzysearch v1.1.3
 	github.com/mattn/go-isatty v0.0.13 // indirect
 	github.com/skip2/go-qrcode v0.0.0-20200617195104-da1b6568686e
 	github.com/stretchr/testify v1.7.0 // indirect

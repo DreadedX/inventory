@@ -24,7 +24,7 @@ export const PartsView: FC = () => {
 			setParts(resp.parts)
 		}).catch(handleError(setMessage, (e: TwirpError) => {
 			if (e.code === "not_found") {
-				setMessage({severity: "info", icon: "question", header: "No parts found!", details: "There are no known parts, try adding some"})
+				// Let the PartList deal with having no parts
 				return true;
 			}
 			return false;
@@ -44,7 +44,19 @@ export const PartsView: FC = () => {
 
 	// @TODO Store the search as a query parameter
 	const onSearch = (query: string) => {
-		console.log(query)
+		setMessage(undefined)
+
+		Part.Search({query}).then(resp => {
+			setParts(resp.parts)
+		}).catch(handleError(setMessage, (e: TwirpError) => {
+			if (e.code === "not_found") {
+				setParts([])
+				return true;
+			}
+			return false;
+		})).finally(() => {
+			// setLoading(false)
+		})
 	}
 
 	return (<Fragment>

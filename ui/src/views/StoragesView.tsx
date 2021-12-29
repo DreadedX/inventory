@@ -24,7 +24,7 @@ export const StoragesView: FC = () => {
 			setStorage(resp.storages)
 		}).catch(handleError(setMessage, (e: TwirpError) => {
 			if (e.code === "not_found") {
-				setMessage({severity: "info", icon: "question", header: "No storage found!", details: "There are no known storage, try adding some"})
+				// Let the StorageList deal with having no storage
 				return true;
 			}
 			return false;
@@ -44,7 +44,19 @@ export const StoragesView: FC = () => {
 
 	// @TODO Store the search as a query parameter
 	const onSearch = (query: string) => {
-		console.log(query)
+		setMessage(undefined)
+
+		Storage.Search({query}).then(resp => {
+			setStorage(resp.storages)
+		}).catch(handleError(setMessage, (e: TwirpError) => {
+			if (e.code === "not_found") {
+				setStorage([])
+				return true;
+			}
+			return false;
+		})).finally(() => {
+			// setLoading(false)
+		})
 	}
 
 	return (<Fragment>
