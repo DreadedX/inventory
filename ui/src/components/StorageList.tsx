@@ -30,7 +30,7 @@ export const StorageList: FC<Props> = ({ storage, loading, attached }: Props) =>
 	const [noStorage, setNoStorage] = useState<boolean>(false)
 
 	useEffect(() => {
-		setNoStorage(!loading && storage?.length == 0)
+		setNoStorage(!loading && storage?.length === 0)
 	}, [storage, loading])
 
 	return (<Fragment>

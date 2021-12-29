@@ -38,7 +38,7 @@ export const StorageView: FC<Props> = ({ editing }: Props) => {
 
 	useEffect(() => {
 		setLoading({...loading, fetch: storage === undefined})
-	}, [storage])
+	}, [storage, loading])
 
 	useEffect(() => {
 		if (id === undefined) {

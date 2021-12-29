@@ -32,7 +32,7 @@ export const PartList: FC<Props> = ({ parts, loading, showStorage, attached }) =
 	const [noParts, setNoParts] = useState<boolean>(false)
 
 	useEffect(() => {
-		setNoParts(!loading && parts?.length == 0)
+		setNoParts(!loading && parts?.length === 0)
 	}, [parts, loading])
 
 	return (<Fragment>
