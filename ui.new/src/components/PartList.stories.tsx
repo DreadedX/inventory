@@ -47,6 +47,13 @@ Normal.args = {
 	loading: false
 }
 
+export const WithStorage = Template.bind({})
+WithStorage.args = {
+	parts: Normal.args.parts,
+	loading: false,
+	showStorage: true
+}
+
 export const Empty = Template.bind({})
 Empty.args = {
 	parts: [],

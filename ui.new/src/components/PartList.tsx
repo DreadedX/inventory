@@ -3,7 +3,6 @@ import { useNavigate } from "react-router-dom";
 import { Message, Segment, Table } from "semantic-ui-react";
 import TextTruncate from "react-text-truncate";
 import * as models from "../models/models.pb";
-import { LoadingStatus } from "../lib/loading";
 
 interface ItemProps {
 	part: models.Part
@@ -13,10 +12,10 @@ interface ItemProps {
 const Item: FC<ItemProps> = ({ part, showStorage }: ItemProps) => {
 	const navigate = useNavigate();
 
-	return (<Table.Row style={{cursor: 'pointer'}} warning={!part.quantity} onClick={() => navigate(part.id.id)}>
+	return (<Table.Row style={{cursor: 'pointer'}} warning={!part.quantity} onClick={() => navigate(`/part/${part?.id.id}`)}>
 		<Table.Cell>{part.name}</Table.Cell>
 		<Table.Cell><TextTruncate line={2} text={part.description}></TextTruncate></Table.Cell>
-		{showStorage && <Table.Cell>{part.storage.name}</Table.Cell>}
+		{showStorage && <Table.Cell>{part.storage?.name}</Table.Cell>}
 		<Table.Cell>{part.quantity}</Table.Cell>
 		<Table.Cell>{part.footprint}</Table.Cell>
 	</Table.Row>)

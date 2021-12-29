@@ -5,7 +5,7 @@ import { LoadingStatus } from "../lib/loading";
 import * as models from "../models/models.pb";
 import * as Storage from "../handlers/storage/storage.pb";
 import { TwirpError } from "twirpscript/dist/runtime/error";
-import { StorageDetail } from "../components";
+import { NotFound, StorageDetail, Toolbar } from "../components";
 
 interface Props {
 	editing?: boolean
@@ -44,7 +44,12 @@ export const StorageView: FC<Props> = ({ editing }: Props) => {
 		}))
 	}, [id]);
 
+	if (notFound) {
+		return (<NotFound />)
+	}
+
 	return (<Fragment>
+		<Toolbar name={storage?.name} loading={loading} functions={[]} />
 		{ editing
 			? <p>EDIT</p>
 			: <StorageDetail storage={storage} loading={loading} attached={message !== undefined}/>

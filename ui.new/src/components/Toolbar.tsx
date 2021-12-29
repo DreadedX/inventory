@@ -51,8 +51,8 @@ export const ToolbarSearch: FC<SearchProps & BaseProps> = ({ onSearch, functions
 	}
 
 	return (<ToolbarBase functions={functions} loading={loading} >
-		<Menu.Menu style={{ marginLeft: "1rem", width: "90%" }} width={12}>
-			<Input style={{width: "100%"}} transparent icon="search" iconPosition="left" placeholder="Seach parts..." onChange={onChange} />
+		<Menu.Menu style={{ marginLeft: "1rem", marginRight: "1rem", width: "100%" }} width={12}>
+			<Input disabled={loading.fetch || loading.save || loading.delete} style={{width: "100%"}} transparent icon="search" iconPosition="left" placeholder="Seach parts..." onChange={onChange} />
 		</Menu.Menu>
 	</ToolbarBase>)
 }

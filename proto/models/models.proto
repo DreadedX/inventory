@@ -16,7 +16,7 @@ message Part {
 	string footprint = 4;
 	int32 quantity = 5;
 	ID storageId = 6; // @gotags: gorm:"type:uuid"
-	Storage storage = 7;
+	optional Storage storage = 7;
 	repeated Link links = 8;
 }
 

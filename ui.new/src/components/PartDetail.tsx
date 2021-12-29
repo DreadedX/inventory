@@ -53,7 +53,7 @@ export const PartDetail: FC<Props> = ({ part, loading, attached }: Props) => {
 				</Form.Group>
 
 				<Form.Group>
-					<Field as={part?.storage.id.id ? Link : undefined} to={`/storage/${part?.storage.id.id}`} width={5} label="Storage" value={part?.storage?.name} loading={loading.fetch}/>
+					<Field as={part?.storage?.id.id ? Link : undefined} to={`/storage/${part?.storage?.id.id}`} width={5} label="Storage" value={part?.storage?.name} loading={loading.fetch}/>
 					<Field width={2} label="Quantity" value={part?.quantity} loading={loading.fetch} placeholder={"0"} />
 				</Form.Group>
 
