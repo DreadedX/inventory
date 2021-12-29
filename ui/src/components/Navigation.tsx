@@ -1,15 +1,31 @@
 import { FC, Fragment, useState } from 'react';
-import { NavLink } from "react-router-dom";
+import { NavLink, useNavigate } from "react-router-dom";
 import { Menu, Icon } from 'semantic-ui-react';
 import { ModalQrScanner, useHasCamera } from '.';
+import * as Label from "../handlers/label/label.pb";
 
 export const Navigation: FC = () => {
 	const [ scannerOpen, setScannerOpen ] = useState(false);
 	const hasCamera = useHasCamera();
 
+	const navigate = useNavigate();
+
 	return (<Fragment>
-		<ModalQrScanner open={scannerOpen} onCancel={() => setScannerOpen(false)} onScan={result => {
-			console.log(result)
+		<ModalQrScanner open={scannerOpen} onCancel={() => setScannerOpen(false)} onScan={(id, type) => {
+			switch (type) {
+				case Label.Type.PART:
+					navigate(`/part/${id.id}`)
+					break
+
+				case Label.Type.STORAGE:
+					navigate(`/storage/${id.id}`)
+					break
+
+				default:
+					return
+			}
+
+			setScannerOpen(false);
 		}} />
 		<Menu size="large">
 			<Menu.Item as={NavLink} to="" exact={true}>

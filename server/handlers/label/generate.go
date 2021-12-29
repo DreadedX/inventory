@@ -100,7 +100,7 @@ func generateLabelPart(part *models.Part) ([]byte, error) {
 }
 
 func generateLabelStorage(storage *models.Storage) ([]byte, error) {
-	id := fmt.Sprintf("p/%s", storage.Id.Id)
+	id := fmt.Sprintf("s/%s", storage.Id.Id)
 	dc, err := baseLabel(id)
 	if err != nil {
 		return nil, err

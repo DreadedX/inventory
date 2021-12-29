@@ -1,6 +1,7 @@
 import { ChangeEvent, FC, Fragment, SyntheticEvent, useState } from "react";
 import TextareaAutosize from 'react-textarea-autosize';
 import * as models from "../models/models.pb";
+import * as Label from "../handlers/label/label.pb";
 import { Button, DropdownItemProps, DropdownProps, Form, Input, Segment } from "semantic-ui-react";
 import { LoadingStatus } from "../lib/loading";
 
@@ -104,24 +105,23 @@ export const PartEdit: FC<Props> = ({ part, availableStorage, addStorage, update
 	}
 
 	return (<Fragment>
-		<ModalQrScanner hint="Scan storage QR code" open={scannerOpen} onCancel={() => setScannerOpen(false)} onScan={(result => {
+		<ModalQrScanner hint="Scan storage QR code" open={scannerOpen} onCancel={() => setScannerOpen(false)} onScan={(id, type) => {
 			// @TODO Actually make this check work properly
 			// Also give feedback to the user
 			if (part === undefined) {
 				return
 			}
 
-			if (!result.startsWith("s/")) {
-				console.log("Not a valid storage id")
+			if (type !== Label.Type.STORAGE) {
 				return
 			}
 
 			const newState = cloneDeep(part);
-			newState.storageId = { id: result.slice(2) };
+			newState.storageId = id;
 			updatePart(newState);
 
 			setScannerOpen(false);
-		})} />
+		}} />
 		<Segment color="grey" attached={(attached) ? true : "bottom"}>
 			<Form loading={loading.fetch || loading.save}>
 				<Form.Group>
