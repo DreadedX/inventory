@@ -106,7 +106,7 @@ export const StorageView: FC<Props> = ({ editing }: Props) => {
 		{
 			icon: "plus",
 			on: () => {
-				console.log("Create a new part with the storage preselected")
+				navigate(`/part/create?storage=${storage?.id.id}`);
 			}
 		},
 		{

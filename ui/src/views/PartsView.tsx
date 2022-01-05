@@ -8,12 +8,15 @@ import { PartList } from "../components";
 import { LoadingStatus } from "../lib/loading";
 import { ToolbarSearch, ToolbarFunction } from "../components/Toolbar";
 import { Message } from "semantic-ui-react";
+import { useNavigate } from "react-router-dom";
 
 export const PartsView: FC = () => {
 	const [ parts, setParts ] = useState<models.Part[]>([]);
 	const [ message, setMessage ] = useState<ErrorMessage>();
 
 	const [ loading, setLoading ] = useState(false)
+
+	const navigate = useNavigate();
 
 	useEffect(() => {
 		setParts([])
@@ -37,7 +40,7 @@ export const PartsView: FC = () => {
 		{
 			icon: "plus",
 			on: () => {
-				console.log("Create a new part")
+				navigate("create");
 			},
 		}
 	]
