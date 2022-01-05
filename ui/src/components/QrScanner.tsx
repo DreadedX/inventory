@@ -12,10 +12,12 @@ export const useHasCamera = () => {
 	const [ hasCamera, setHasCamera ] = useState<boolean | undefined>(undefined);
 
 	useEffect(() => {
-		navigator.mediaDevices.enumerateDevices().then(devices => {
-			const count = devices.filter((device) => device.kind === "videoinput").length
-			setHasCamera(count > 0)
-		})
+		if (navigator?.mediaDevices?.enumerateDevices) {
+			navigator.mediaDevices.enumerateDevices().then(devices => {
+				const count = devices.filter((device) => device.kind === "videoinput").length
+				setHasCamera(count > 0)
+			})
+		}
 	}, [])
 
 	return hasCamera
