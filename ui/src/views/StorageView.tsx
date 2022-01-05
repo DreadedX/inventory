@@ -10,6 +10,7 @@ import { TwirpError } from "twirpscript/dist/runtime/error";
 import { ModalDelete, ModalDiscard, ModalPrint, NotFound, StorageDetail, StorageEdit, Toolbar } from "../components";
 import { ToolbarFunction } from "../components/Toolbar";
 import { cloneDeep } from "lodash";
+import { Message } from "semantic-ui-react";
 
 interface Props {
 	editing?: boolean
@@ -210,5 +211,6 @@ export const StorageView: FC<Props> = ({ editing }: Props) => {
 			? <StorageEdit storage={editedStorage} loading={loading} attached={message !== undefined} updateStorage={(storage) => {setHasEdited(true); setEditedStorage(storage)}}  />
 			: <StorageDetail storage={storage} loading={loading} attached={message !== undefined}/>
 		}
+		{ message && <Message onDismiss={() => setMessage(undefined)} attached="bottom" info={message.severity === "info"} warning={message.severity === "warning"} error={message.severity === "error"} success={message.severity === "success"} header={message.header} content={message.details} icon={message.icon} /> }
 	</Fragment>);
 }
