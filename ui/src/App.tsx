@@ -1,6 +1,6 @@
 import { FC } from "react";
 import { Container } from "semantic-ui-react";
-import { PartView, PartsView, StorageView, StoragesView, PartCreateView } from "./views";
+import { PartView, PartsView, StorageView, StoragesView, PartCreateView, StorageCreateView } from "./views";
 import { BrowserRouter, Routes, Route, Outlet } from "react-router-dom";
 
 import "semantic-ui-css/semantic.min.css"
@@ -22,6 +22,7 @@ const App: FC = () => {
 
 				<Route path="storage" element={<Outlet />} >
 					<Route path="" element={<StoragesView />} />
+					<Route path="create" element={<StorageCreateView />} />
 					<Route path=":id" element={<Outlet />}>
 						<Route path="" element={<StorageView />} />
 						<Route path="edit" element={<StorageView editing/>} />
