@@ -41,11 +41,13 @@ export const Toolbar: FC<Props & BaseProps> = ({ name, functions, loading}: Prop
 }
 
 interface SearchProps {
+	value: string
 	onSearch: (query: string) => void
 	hint?: string
 }
 
-export const ToolbarSearch: FC<SearchProps & BaseProps> = ({ onSearch, functions, loading, hint="Search..." }: SearchProps & BaseProps) => {
+// @TODO Add a clear button to the search bar
+export const ToolbarSearch: FC<SearchProps & BaseProps> = ({ value, onSearch, functions, loading, hint="Search..." }: SearchProps & BaseProps) => {
 
 	const onChange = (_event: ChangeEvent<HTMLInputElement>, data: InputOnChangeData) => {
 		onSearch(data.value)
@@ -53,7 +55,7 @@ export const ToolbarSearch: FC<SearchProps & BaseProps> = ({ onSearch, functions
 
 	return (<ToolbarBase functions={functions} loading={loading} >
 		<Menu.Menu style={{ marginLeft: "1rem", marginRight: "1rem", width: "100%" }} width={12}>
-			<Input disabled={loading.fetch || loading.save || loading.delete} style={{width: "100%"}} transparent icon="search" iconPosition="left" placeholder={hint} onChange={onChange} />
+			<Input disabled={loading.fetch || loading.save || loading.delete} style={{width: "100%"}} transparent icon="search" iconPosition="left" placeholder={hint} onChange={onChange} value={value} loading={loading.search}/>
 		</Menu.Menu>
 	</ToolbarBase>)
 }

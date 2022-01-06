@@ -20,18 +20,6 @@ func (s *Server) FetchAll(ctx context.Context, req *FetchAllRequest) (*FetchAllR
 	var parts []*models.Part
 	s.DB.Order("name ASC").Joins("Storage").Find(&parts)
 
-	if len(parts) == 0 {
-		return nil, twirp.NewError(twirp.NotFound, "No parts found!")
-	}
-
-	return &FetchAllResponse{Parts: parts}, nil
-}
-
-// @TODO We should propably just merge this with fetch
-func (s *Server) Search(ctx context.Context, req *SearchRequest) (*SearchResponse, error) {
-	var parts []*models.Part
-	s.DB.Order("name ASC").Joins("Storage").Find(&parts)
-
 	if len(req.Query) > 0 {
 		// @TODO Improve the search system
 		// Currently we just create one large string containing all the properties and then perform a fuzzy search
@@ -60,7 +48,7 @@ func (s *Server) Search(ctx context.Context, req *SearchRequest) (*SearchRespons
 		return nil, twirp.NewError(twirp.NotFound, "No parts found!")
 	}
 
-	return &SearchResponse{Parts: parts}, nil
+	return &FetchAllResponse{Parts: parts}, nil
 }
 
 func (s *Server) Fetch(ctx context.Context, id *models.ID) (*models.Part, error) {

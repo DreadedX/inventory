@@ -6,21 +6,15 @@ import "models/models.proto";
 
 service Storage {
 	rpc FetchAll(FetchAllRequest) returns (FetchAllResponse);
-	rpc Search(SearchRequest) returns (SearchResponse);
 	rpc Fetch(models.ID) returns (models.Storage);
 	rpc Create(models.Storage) returns (models.Storage);
 	rpc Delete(models.ID) returns (models.Storage);
 	rpc Update(models.Storage) returns (models.Storage);
 }
 
-message FetchAllRequest {}
-message FetchAllResponse {
-	repeated models.Storage storages = 1;
-}
-
-message SearchRequest {
+message FetchAllRequest {
 	string query = 1;
 }
-message SearchResponse {
+message FetchAllResponse {
 	repeated models.Storage storages = 1;
 }

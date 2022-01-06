@@ -18,22 +18,6 @@ func (s *Server) FetchAll(ctx context.Context, req *FetchAllRequest) (*FetchAllR
 	var storages []*models.Storage
 	s.DB.Order("name ASC").Find(&storages)
 
-	if len(storages) == 0 {
-		return nil, twirp.NewError(twirp.NotFound, "No storage found!")
-	}
-
-	for i, storage := range storages {
-		storages[i].PartCount = int32(s.DB.Model(&storage).Association("Parts").Count())
-	}
-
-	return &FetchAllResponse{Storages: storages}, nil
-}
-
-// @TODO See part search
-func (s *Server) Search(ctx context.Context, req *SearchRequest) (*SearchResponse, error) {
-	var storages []*models.Storage
-	s.DB.Order("name ASC").Find(&storages)
-
 	if len(req.Query) > 0 {
 		// @TODO See part search
 		var values []string
@@ -61,7 +45,7 @@ func (s *Server) Search(ctx context.Context, req *SearchRequest) (*SearchRespons
 		storages[i].PartCount = int32(s.DB.Model(&storage).Association("Parts").Count())
 	}
 
-	return &SearchResponse{Storages: storages}, nil
+	return &FetchAllResponse{Storages: storages}, nil
 }
 
 func (s *Server) Fetch(ctx context.Context, id *models.ID) (*models.Storage, error) {

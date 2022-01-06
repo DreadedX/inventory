@@ -67,7 +67,7 @@ export const PartView: FC<Props> = ({ editing }: Props) => {
 
 	useEffect(() => {
 		if (editing) {
-			Storage.FetchAll({}).then(resp => {
+			Storage.FetchAll({query: ""}).then(resp => {
 				const options = resp.storages.map(transformStorageToOption);
 
 				setAvailableStorage(options)

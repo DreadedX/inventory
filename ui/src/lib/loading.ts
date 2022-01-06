@@ -4,6 +4,7 @@ export type LoadingStatus = {
 	delete: boolean
 	options: boolean
 	print: boolean
+	search: boolean
 }
 
 export const LoadingStatus = {
@@ -13,7 +14,8 @@ export const LoadingStatus = {
 			save: false,
 			delete: false,
 			options: true,
-			print: false
+			print: false,
+			search: false
 		}
 	}
 }

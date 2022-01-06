@@ -37,7 +37,7 @@ export const PartCreateView: FC = () => {
 	}, [part, availableStorage])
 
 	useEffect(() => {
-		Storage.FetchAll({}).then(resp => {
+		Storage.FetchAll({query: ""}).then(resp => {
 			const options = resp.storages.map(transformStorageToOption);
 
 			setAvailableStorage(options)
