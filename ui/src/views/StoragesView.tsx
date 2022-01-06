@@ -78,7 +78,7 @@ export const StoragesView: FC = () => {
 	return (<Fragment>
 		<ToolbarSearch onSearch={onSearch} hint="Search storage..." loading={{...LoadingStatus.defaultValue(), fetch: false}} functions={toolbar} value={search} />
 		<div style={{height: "650px"}}>
-		<StorageList storage={storage} loading={loading.fetch} attached={message !== undefined}/>
+		<StorageList storage={storage.slice((page-1)*10, page*10)} loading={loading.fetch} attached={message !== undefined}/>
 		{ message && <Message onDismiss={() => setMessage(undefined)} attached="bottom" info={message.severity === "info"} warning={message.severity === "warning"} error={message.severity === "error"} success={message.severity === "success"} header={message.header} content={message.details} icon={message.icon} /> }
 		</div>
 		{ totalPages > 1 &&
