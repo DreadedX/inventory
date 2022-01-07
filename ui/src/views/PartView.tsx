@@ -42,7 +42,7 @@ export const PartView: FC<Props> = ({ editing }: Props) => {
 	}, [part])
 
 	useEffect(() => {
-		setLoading({...loading, fetch: part === undefined, options: availableStorage === undefined})
+		setLoading(l => ({...l, fetch: part === undefined, options: availableStorage === undefined}))
 	}, [part, availableStorage])
 
 	useEffect(() => {

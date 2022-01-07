@@ -7,7 +7,7 @@ import { TwirpError } from "twirpscript/dist/runtime/error";
 import { PartList } from "../components";
 import { LoadingStatus } from "../lib/loading";
 import { ToolbarSearch, ToolbarFunction } from "../components/Toolbar";
-import { Icon, Message, Pagination, PaginationProps, Segment } from "semantic-ui-react";
+import { Icon, Message, Pagination, PaginationProps } from "semantic-ui-react";
 import { useNavigate, useSearchParams } from "react-router-dom";
 
 export const PartsView: FC = () => {
@@ -25,7 +25,7 @@ export const PartsView: FC = () => {
 	useEffect(() => {
 		setParts([])
 		setMessage(undefined)
-		setLoading({...loading, fetch: true})
+		setLoading(l => ({...l, fetch: true}))
 
 		Part.FetchAll({query: search}).then(resp => {
 			setParts(resp.parts)
@@ -36,9 +36,9 @@ export const PartsView: FC = () => {
 			}
 			return false;
 		})).finally(() => {
-			setLoading({...loading, fetch: false})
+			setLoading(l => ({...l, fetch: false}))
 		})
-	}, []);
+	}, [search]);
 
 	const toolbar: ToolbarFunction[] = [
 		{

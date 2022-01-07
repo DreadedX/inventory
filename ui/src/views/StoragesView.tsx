@@ -25,7 +25,7 @@ export const StoragesView: FC = () => {
 	useEffect(() => {
 		setStorage([])
 		setMessage(undefined)
-		setLoading({...loading, fetch: true})
+		setLoading(l => ({...l, fetch: true}))
 
 		Storage.FetchAll({query: search}).then(resp => {
 			setStorage(resp.storages)
@@ -36,9 +36,9 @@ export const StoragesView: FC = () => {
 			}
 			return false;
 		})).finally(() => {
-			setLoading({...loading, fetch: false})
+			setLoading(l => ({...l, fetch: false}))
 		})
-	}, []);
+	}, [search]);
 
 	const toolbar: ToolbarFunction[] = [
 		{

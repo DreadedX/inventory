@@ -26,14 +26,16 @@ export const PartCreateView: FC = () => {
 
 	useEffect(() => {
 		if (storageId) {
-			const newState = cloneDeep(part)
-			newState.storageId = { id: storageId }
-			setPart(newState);
+			setPart(p => {
+				const newState = cloneDeep(p)
+				newState.storageId = { id: storageId }
+				return newState
+			});
 		}
 	}, [storageId]);
 
 	useEffect(() => {
-		setLoading({...loading, options: availableStorage === undefined})
+		setLoading(l => ({...l, options: availableStorage === undefined}))
 	}, [part, availableStorage])
 
 	useEffect(() => {
