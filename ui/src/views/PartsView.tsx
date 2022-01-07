@@ -79,7 +79,7 @@ export const PartsView: FC = () => {
 
 	return (<Fragment>
 		<ToolbarSearch onSearch={onSearch} hint="Search part..." loading={{...loading, fetch: false}} functions={toolbar} value={search} />
-		<div style={{height: "650px"}}>
+		<div style={{height: "720px"}}>
 			<PartList parts={parts.slice((page-1)*10, page*10)} loading={loading.fetch} showStorage attached={message !== undefined}/>
 			{ message && <Message onDismiss={() => setMessage(undefined)} attached="bottom" info={message.severity === "info"} warning={message.severity === "warning"} error={message.severity === "error"} success={message.severity === "success"} header={message.header} content={message.details} icon={message.icon} /> }
 		</div>
