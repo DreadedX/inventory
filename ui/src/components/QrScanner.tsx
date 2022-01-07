@@ -3,10 +3,11 @@ import { QRCode } from "jsqr";
 
 import styles from "./styles.module.css";
 
-import Worker from "../worker";
 import { Header, Icon, Placeholder, Segment } from "semantic-ui-react";
 
-const instance = new Worker()
+import * as Comlink from "comlink";
+import { Scanner } from "../worker/scanner";
+const instance = Comlink.wrap<Scanner>(new Worker(new URL("../worker/scanner.ts", import.meta.url)));
 
 export const useHasCamera = () => {
 	const [ hasCamera, setHasCamera ] = useState<boolean | undefined>(undefined);
