@@ -11,6 +11,7 @@ import * as models from "../models/models.pb";
 import * as Part from "../handlers/part/part.pb";
 import * as Storage from "../handlers/storage/storage.pb";
 import * as Label from "../handlers/label/label.pb";
+import * as FileHandler from "../handlers/file/file.pb";
 import { DropdownItemProps, Message } from "semantic-ui-react";
 import { cloneDeep } from "lodash";
 
@@ -29,6 +30,7 @@ export const PartView: FC<Props> = ({ editing }: Props) => {
 	const [ editedPart, setEditedPart ] = useState<models.Part>();
 	const [ hasEdited, setHasEdited ] = useState(false);
 	const [ availableStorage, setAvailableStorage ] = useState<DropdownItemProps[]>();
+	const [ files, setFiles ] = useState<File[]>([])
 
 	const [ modal, setModal ] = useState<OpenModal>(OpenModal.None)
 	const [ labelPreview, setLabelPreview ] = useState<string>();
@@ -95,14 +97,29 @@ export const PartView: FC<Props> = ({ editing }: Props) => {
 		},
 		{
 			icon: "save",
-			on: () => {
+			on: async () => {
 				// We should not be able to press the button if there is no part loaded
 				if (part === undefined || editedPart === undefined) {
 					return
 				}
 
 				setLoading({...loading, save: true})
-				
+
+				// @TODO We want to await all of the uploads before we update the part
+				// However for some reason using await breaks the Upload functions
+				// I have no explaination for this...
+				files.map(async (file: File): Promise<void> => {
+					// @TODO For some reason using await here causes it to not actually update the database???
+					FileHandler.Upload({
+						data: new Uint8Array(await file.arrayBuffer()),
+						filename: file?.name,
+						partId: part.id
+					}).then(f => {
+						console.log(f)
+					}).catch(handleError(setMessage))
+				})
+				setFiles([])
+
 				Part.Update(editedPart).then(resp => {
 					setPart(resp)
 					navigate("..")
@@ -166,6 +183,10 @@ export const PartView: FC<Props> = ({ editing }: Props) => {
 		}).catch(handleError(setMessage)).finally(() => {
 			setLoading({...loading, options: false})
 		})
+	}
+
+	const addFile = (file: File) => {
+		setFiles([...files, file])
 	}
 
 	// @TODO Redirect people to the 404 page
@@ -234,7 +255,7 @@ export const PartView: FC<Props> = ({ editing }: Props) => {
 		<Modals />
 		<Toolbar name={part?.name} loading={loading} functions={editing ? toolbarEdit : toolbarDetail} />
 		{ (editing
-			&& <PartEdit part={editedPart} availableStorage={availableStorage} addStorage={addStorage} updatePart={(part) => {setHasEdited(true); setEditedPart(part)}} loading={loading} attached={message !== undefined} />)
+			&& <PartEdit part={editedPart} availableStorage={availableStorage} addStorage={addStorage} addFile={addFile} updatePart={(part) => {setHasEdited(true); setEditedPart(part)}} loading={loading} attached={message !== undefined} />)
 			|| <PartDetail part={part} loading={loading} attached={message !== undefined} />
 		}
 	{ message && <Message onDismiss={() => setMessage(undefined)} attached="bottom" info={message.severity === "info"} warning={message.severity === "warning"} error={message.severity === "error"} success={message.severity === "success"} header={message.header} content={message.details} icon={message.icon} /> }

@@ -9,3 +9,4 @@ protoc --twirp_out=../server --go_out=../server --twirp_opt=paths=source_relativ
 protoc --twirp_out=../server --go_out=../server --twirp_opt=paths=source_relative --go_opt=paths=source_relative --proto_path=../proto handlers/storage/storage.proto
 protoc --twirp_out=../server --go_out=../server --twirp_opt=paths=source_relative --go_opt=paths=source_relative --proto_path=../proto handlers/label/label.proto
 protoc --twirp_out=../server --go_out=../server --python_out=../printer --twirpy_out=../printer --twirp_opt=paths=source_relative --go_opt=paths=source_relative --proto_path=../proto handlers/printer/printer.proto
+protoc --twirp_out=../server --go_out=../server --twirp_opt=paths=source_relative --go_opt=paths=source_relative --proto_path=../proto handlers/file/file.proto

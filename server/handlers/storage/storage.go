@@ -68,7 +68,7 @@ func (s *Server) Fetch(ctx context.Context, id *models.ID) (*models.Storage, err
 
 func (s *Server) Create(ctx context.Context, storage *models.Storage) (*models.Storage, error) {
 	if err := s.DB.Save(storage).Error; err != nil {
-		return nil, twirp.WrapError(twirp.NewError(twirp.Internal, "Failed to create part"), err)
+		return nil, twirp.WrapError(twirp.NewError(twirp.Internal, "Failed to create storage"), err)
 	}
 
 	return storage, nil
@@ -89,12 +89,12 @@ func (s *Server) Delete(ctx context.Context, id *models.ID) (*models.Storage, er
 	// Remove reference to storage from parts
 	for _, part := range storage.Parts {
 		if err := s.DB.Model(&part).Update("storage_id", nil).Error; err != nil {
-			return nil, twirp.WrapError(twirp.NewError(twirp.Internal, "Failed to delete part"), err)
+			return nil, twirp.WrapError(twirp.NewError(twirp.Internal, "Failed to remove reference to storage from part"), err)
 		}
 	}
 
 	if err := s.DB.Delete(&storage).Error; err != nil {
-		return nil, twirp.WrapError(twirp.NewError(twirp.Internal, "Failed to delete part"), err)
+		return nil, twirp.WrapError(twirp.NewError(twirp.Internal, "Failed to delete storage"), err)
 	}
 
 	return &storage, nil

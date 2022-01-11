@@ -1,0 +1,16 @@
+syntax = "proto3";
+package handlers.file;
+option go_package = "inventory/handlers/file";
+
+import "models/models.proto";
+
+service File {
+	rpc Upload(UploadRequest) returns (models.File);
+	rpc Delete(models.ID) returns (models.File);
+}
+
+message UploadRequest {
+	bytes data = 1;
+	string filename = 2;
+	models.ID partId = 3;
+}

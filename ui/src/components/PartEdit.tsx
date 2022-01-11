@@ -1,4 +1,4 @@
-import { ChangeEvent, FC, Fragment, SyntheticEvent, useState } from "react";
+import { ChangeEvent, FC, Fragment, SyntheticEvent, useRef, useState } from "react";
 import TextareaAutosize from 'react-textarea-autosize';
 import * as models from "../models/models.pb";
 import * as Label from "../handlers/label/label.pb";
@@ -19,15 +19,17 @@ export interface PartEditFunctions {
 interface Props {
 	part: models.Part | undefined
 	availableStorage: DropdownItemProps[] | undefined
+	addFile: (file: File) => void
 	addStorage: (name: string, callback: (id: models.ID) => void) => void
 	updatePart: (part: models.Part) => void
 	loading: LoadingStatus
 	attached?: boolean
 }
 
-export const PartEdit: FC<Props> = ({ part, availableStorage, addStorage, updatePart, loading, attached }: Props) => {
+export const PartEdit: FC<Props> = ({ part, availableStorage, addStorage, addFile, updatePart, loading, attached }: Props) => {
 	const hasCamera = useHasCamera();
 	const [ scannerOpen, setScannerOpen ] = useState(false);
+	const fileUploadRef = useRef<HTMLInputElement>(null)
 
 	const onChange = (event: ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
 		if (part === undefined) {
@@ -70,17 +72,6 @@ export const PartEdit: FC<Props> = ({ part, availableStorage, addStorage, update
 		updatePart(newState)
 	}
 
-	const onRemoveUrl = (index: number) => {
-		if (part === undefined) {
-			return
-		}
-
-		const newState = cloneDeep(part)
-		newState.links.splice(index, 1)
-
-		updatePart(newState)
-	}
-
 	const onAddStorage = (_event: SyntheticEvent<HTMLElement>, data: DropdownProps) => {
 		if (part === undefined) {
 			return
@@ -93,7 +84,18 @@ export const PartEdit: FC<Props> = ({ part, availableStorage, addStorage, update
 		})
 	}
 
-	const onAddUrl = () => {
+	const onRemoveLink = (index: number) => {
+		if (part === undefined) {
+			return
+		}
+
+		const newState = cloneDeep(part)
+		newState.links.splice(index, 1)
+
+		updatePart(newState)
+	}
+
+	const onAddLink = () => {
 		if (part === undefined) {
 			return
 		}
@@ -102,6 +104,39 @@ export const PartEdit: FC<Props> = ({ part, availableStorage, addStorage, update
 		newState.links.push(models.Link.defaultValue())
 
 		updatePart(newState)
+	}
+
+	const onRemoveFile = (index: number) => {
+		if (part === undefined) {
+			return
+		}
+
+		const newState = cloneDeep(part)
+		newState.files.splice(index, 1)
+
+		updatePart(newState)
+	}
+
+	const onFileUpload = (index: number) => {
+		return (event: ChangeEvent<HTMLInputElement>) => {
+			if (part === undefined) {
+				return
+			}
+
+			const files = event.target.files
+			if (files !== null && files.length > 0) {
+
+				addFile(files[0])
+
+				const newState = cloneDeep(part)
+				newState.files.push({
+					...models.File.defaultValue(),
+					filename: files[0].name
+				})
+
+				updatePart(newState)
+			}
+		}
 	}
 
 	return (<Fragment>
@@ -149,9 +184,18 @@ export const PartEdit: FC<Props> = ({ part, availableStorage, addStorage, update
 				<Form.Field width={8}>
 					<label>Links</label>
 					{part?.links.map((link, index) => (<Form.Field key={index}>
-						<Input id={index} name="link" action={{color: 'red', icon: 'trash', onClick: () => onRemoveUrl(index)}} label="https://"  value={link.url} onChange={onChange} />
+						<Input id={index} name="link" action={{color: 'red', icon: 'trash', onClick: () => onRemoveLink(index)}} label="https://"  value={link.url} onChange={onChange} />
 					</Form.Field>))}
-					<Button onClick={onAddUrl}>Add URL</Button>
+					<Button onClick={onAddLink}>Add URL</Button>
+				</Form.Field>
+
+				<Form.Field width={4}>
+					<label>Files</label>
+					{part?.files.map((file, index) => (<Form.Field key={index}>
+						<Input id={index} name="file" icon="file" iconPosition="left" action={{color: 'red', icon: 'trash', onClick: () => onRemoveFile(index)}} readOnly value={file.filename} />
+					</Form.Field>))}
+					<input ref={fileUploadRef} type="file" style={{display: "none"}} onChange={onFileUpload(part?.files.length || 0)} />
+					<Button onClick={() => fileUploadRef.current?.click()}>Upload file</Button>
 				</Form.Field>
 			</Form>
 		</Segment>

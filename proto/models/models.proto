@@ -18,14 +18,23 @@ message Part {
 	ID storageId = 6; // @gotags: gorm:"type:uuid"
 	optional Storage storage = 7;
 	repeated Link links = 8;
+	repeated File files = 9;
 }
 
 message Link {
-	int32 id = 1; // @gotags: gorm:"type:primary_key"
+	int32 id = 1; // @gotags: gorm:"primary_key"
 	string url = 2;
 	ID partId = 3; // @gotags: gorm:"type:uuid"
+}
+
+message File {
+	int32 id = 1; // @gotags: gorm:"primary_key"
+	string hash = 2;
+	string filename = 3;
+	ID partId = 4; // @gotags: gorm:"type:uuid"
 }
 
 message ID {
 	string id = 1;
 }
+

@@ -11,6 +11,7 @@ import (
 	"gorm.io/driver/postgres"
 	"gorm.io/gorm"
 
+	"inventory/handlers/file"
 	"inventory/handlers/label"
 	"inventory/handlers/part"
 	"inventory/handlers/printer"
@@ -22,6 +23,7 @@ func Migrate(db *gorm.DB) {
 	db.AutoMigrate(&models.Part{})
 	db.AutoMigrate(&models.Storage{})
 	db.AutoMigrate(&models.Link{})
+	db.AutoMigrate(&models.File{})
 }
 
 func main() {
@@ -78,6 +80,11 @@ func main() {
 
 	labelServer := label.NewLabelServer(&label.Server{DB: db, Printer: printer.NewPrinterProtobufClient(printerHost, &http.Client{})})
 	router.POST(labelServer.PathPrefix() + "*w", gin.WrapH(labelServer))
+
+	fileServerStruct := &file.Server{DB: db}
+	fileServer := file.NewFileServer(fileServerStruct)
+	router.POST(fileServer.PathPrefix() + "*w", gin.WrapH(fileServer))
+	router.GET("file/:hash", fileServerStruct.Download)
 
 	port := os.Getenv("PORT")
 	if port == "" {

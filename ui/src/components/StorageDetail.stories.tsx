@@ -35,7 +35,8 @@ Normal.args = {
 				storageId: {
 					id: "EJKS4JhLEvk8oHH2Cge9Tm"
 				},
-				links: []
+				links: [],
+				files: []
 			},
 			{
 				id: {
@@ -48,7 +49,8 @@ Normal.args = {
 				storageId: {
 					id: "EJKS4JhLEvk8oHH2Cge9Tm"
 				},
-				links: []
+				links: [],
+				files: []
 			}
 		],
 		partCount: 0

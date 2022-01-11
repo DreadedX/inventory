@@ -31,6 +31,16 @@ const FieldLink: FC<FieldLinkProps & Record<string, any>> = ({ link, ...props }:
 	</Form.Field>)
 }
 
+interface FieldFileProps {
+	file: models.File
+}
+
+const FieldFile: FC<FieldFileProps & Record<string, any>> = ({ file, ...props }: FieldFileProps) => {
+	return (<Form.Field style={{margin: '0em'}} {...props}>
+		<a style={{margin: '1em'}} href={`/file/${file.hash}`}>{file.filename}</a>
+	</Form.Field>)
+}
+
 interface Props {
 	part: models.Part | undefined
 	loading: LoadingStatus
@@ -58,10 +68,17 @@ export const PartDetail: FC<Props> = ({ part, loading, attached }: Props) => {
 
 				<Field width={16} label="Description" value={part?.description} loading={loading.fetch}/>
 
-				{ part?.links && part?.links.length > 0 && <Form.Field>
-					<label>Links</label>
-					{ part?.links?.map((link, index) => (<FieldLink link={link} key={index} />)) }
-				</Form.Field> }
+				<Form.Group>
+					{ part?.links && part?.links.length > 0 && <Form.Field width={8}>
+						<label>Links</label>
+						{ part?.links?.map((link, index) => (<FieldLink link={link} key={index} />)) }
+					</Form.Field> }
+
+					{ part?.files && part?.files.length > 0 && <Form.Field width={8}>
+						<label>Files</label>
+							{ part?.files?.map((file, index) => (<FieldFile file={file} key={index} />)) }
+					</Form.Field> }
+				</Form.Group>
 			</Form>
 		</Segment>
 		{ outOfStock && <Message attached={attached ? true : "bottom"} warning icon="exclamation circle" header="No stock left"/> }

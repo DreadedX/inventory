@@ -2,7 +2,7 @@ package part
 
 import (
 	"context"
-	"log"
+	"os"
 	"sort"
 
 	"inventory/models"
@@ -12,7 +12,7 @@ import (
 	"gorm.io/gorm"
 )
 
-type Server struct{
+type Server struct {
 	DB *gorm.DB
 }
 
@@ -58,7 +58,7 @@ func (s *Server) Fetch(ctx context.Context, id *models.ID) (*models.Part, error)
 	}
 
 	var part models.Part
-	s.DB.Joins("Storage").Preload("Links").First(&part, uuid)
+	s.DB.Joins("Storage").Preload("Links").Preload("Files").First(&part, uuid)
 
 	if part.Id == nil {
 		return nil, twirp.NewError(twirp.NotFound, "No part found!")
@@ -68,11 +68,11 @@ func (s *Server) Fetch(ctx context.Context, id *models.ID) (*models.Part, error)
 }
 
 func (s *Server) Create(ctx context.Context, part *models.Part) (*models.Part, error) {
-	if err := s.DB.Omit("Storage").Create(part).Error; err != nil {
+	if err := s.DB.Omit("Storage", "Files").Create(part).Error; err != nil {
 		return nil, twirp.WrapError(twirp.NewError(twirp.Internal, "Failed to create part"), err)
 	}
 
-	if err := s.DB.Joins("Storage").Preload("Links").First(&part).Error; err != nil {
+	if err := s.DB.Joins("Storage").Preload("Links").Preload("Files").First(&part).Error; err != nil {
 		return nil, twirp.WrapError(twirp.NewError(twirp.Internal, "Failed to create part"), err)
 	}
 
@@ -86,15 +86,35 @@ func (s *Server) Delete(ctx context.Context, id *models.ID) (*models.Part, error
 	}
 
 	var part models.Part
-	s.DB.Joins("Storage").Preload("Links").First(&part, uuid)
+	s.DB.Joins("Storage").Preload("Links").Preload("Files").First(&part, uuid)
 	if part.Id == nil {
 		return nil, twirp.NewError(twirp.NotFound, "No part found!")
 	}
 
-	if err := s.DB.Select("Links").Delete(&part).Error; err != nil {
-		return nil, twirp.WrapError(twirp.NewError(twirp.Internal, "Failed to delete part"), err)
+	for _, link := range part.Links {
+		if err := s.DB.Delete(&link).Error; err != nil {
+			return nil, twirp.WrapError(twirp.NewError(twirp.Internal, "Failed to delete link associated with part"), err)
+		}
 	}
 
+	for _, file := range part.Files {
+		if err := s.DB.Delete(&file).Error; err != nil {
+			return nil, twirp.WrapError(twirp.NewError(twirp.Internal, "Failed to delete file associated with part"), err)
+		}
+
+		// Only delete the file on disk if there are no references to it anymore
+		var count int64
+		s.DB.Model(&models.Part{}).Where("hash = ?", file.Hash).Count(&count)
+		if count == 0 {
+			if err := os.Remove(file.Filepath()); err != nil {
+				return nil, twirp.WrapError(twirp.NewError(twirp.Internal, "Failed to delete file associated with part"), err)
+			}
+		}
+	}
+
+	if err := s.DB.Select("Links").Select("Files").Delete(&part).Error; err != nil {
+		return nil, twirp.WrapError(twirp.NewError(twirp.Internal, "Failed to delete part"), err)
+	}
 
 	return &part, nil
 }
@@ -105,39 +125,67 @@ func (s *Server) Update(ctx context.Context, part *models.Part) (*models.Part, e
 		return nil, twirp.WrapError(twirp.NewError(twirp.InvalidArgument, "Invalid ID"), err)
 	}
 
-	// Make sure the entry exist
-	var count int64
-	s.DB.Model(&models.Part{}).Where("id = ?", uuid).Count(&count)
-	if count <= 0 {
+	// Get the original part
+	var originalPart models.Part
+	s.DB.Joins("Storage").Preload("Links").Preload("Files").First(&originalPart, uuid)
+	if part.Id == nil {
 		return nil, twirp.NewError(twirp.NotFound, "No part found!")
 	}
 
-	// Update part
-	// @todo We can not change value to an empty value
-	if err := s.DB.Select("*").Omit("Storage", "Links").Updates(&part).Error; err != nil {
+	// Update part (this will also create any new links)
+	if err := s.DB.Select("*").Omit("Storage" ,"Files").Updates(&part).Error; err != nil {
 		return nil, twirp.WrapError(twirp.NewError(twirp.InvalidArgument, "Failed to update part"), err)
 	}
 
-	// @todo Figure out a better way to update the links
-	// Remove all existing links
-	if err := s.DB.Where("part_id = ?", uuid).Delete(&models.Link{}).Error; err != nil {
-		return nil, twirp.WrapError(twirp.NewError(twirp.Internal, "Failed to update part"), err)
+	// Remove any links that appeared before but now no longer appear
+	removeLinks:
+	for _, l1 := range originalPart.Links {
+		for _, l2 := range part.Links {
+			if l1.Id == l2.Id {
+				continue removeLinks
+			}
+		}
+
+		// Link is removed
+		if err := s.DB.Delete(&l1).Error; err != nil {
+			return nil, twirp.WrapError(twirp.NewError(twirp.Internal, "Failed to remove old link from part"), err)
+		}
 	}
 
-	// Add all the links
-	for i, link := range part.Links {
-		if (len(link.Url) > 0) {
-			part.Links[i].PartId = part.Id
-			log.Println(part.Links[i])
-			if err := s.DB.Create(&part.Links[i]).Error; err != nil {
-				log.Println("ERROR", part.Links[i])
-				return nil, twirp.WrapError(twirp.NewError(twirp.InvalidArgument, "Failed to update part"), err)
+	// Update the remaining links
+	for _, l2 := range part.Links {
+		// Update existing link
+		if err := s.DB.Select("*").Updates(&l2).Error; err != nil {
+			return nil, twirp.WrapError(twirp.NewError(twirp.InvalidArgument, "Failed to update link from part"), err)
+		}
+	}
+
+	removeFiles:
+	for _, l1 := range originalPart.Files {
+		for _, l2 := range part.Files {
+			if l1.Id == l2.Id {
+				continue removeFiles
+			}
+		}
+
+		// File is removed
+		if err := s.DB.Delete(&l1).Error; err != nil {
+			return nil, twirp.WrapError(twirp.NewError(twirp.Internal, "Failed to remove old file from part"), err)
+		}
+
+		var count int64
+		s.DB.Model(&models.File{}).Where("hash = ?", l1.Hash).Count(&count)
+		if count == 0 {
+			if err := os.Remove(l1.Filepath()); err != nil {
+				return nil, twirp.WrapError(twirp.NewError(twirp.Internal, "Failed to delete file associated with part"), err)
 			}
 		}
 	}
 
-	// Load the updated entry, since we omitted the links
-	if err := s.DB.Joins("Storage").Preload("Links").First(&part, uuid).Error; err != nil {
+	// We do no have to update files, as we can only add or remove files
+
+	// Load the updated entry
+	if err := s.DB.Joins("Storage").Preload("Links").Preload("Files").First(&part, uuid).Error; err != nil {
 		return nil, twirp.WrapError(twirp.NewError(twirp.Internal, "Failed to update part"), err)
 	}
 
