@@ -37,7 +37,7 @@ interface FieldFileProps {
 
 const FieldFile: FC<FieldFileProps & Record<string, any>> = ({ file, ...props }: FieldFileProps) => {
 	return (<Form.Field style={{margin: '0em'}} {...props}>
-		<a style={{margin: '1em'}} href={`/file/${file.hash}`}>{file.filename}</a>
+		<a style={{margin: '1em'}} href={`/file/${file.partId.id}/${file.hash}`}>{file.filename}</a>
 	</Form.Field>)
 }
 

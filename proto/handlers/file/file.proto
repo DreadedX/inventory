@@ -6,11 +6,16 @@ import "models/models.proto";
 
 service File {
 	rpc Upload(UploadRequest) returns (models.File);
-	rpc Delete(models.ID) returns (models.File);
+	rpc Delete(DeleteRequest) returns (models.File);
 }
 
 message UploadRequest {
 	bytes data = 1;
 	string filename = 2;
 	models.ID partId = 3;
+}
+
+message DeleteRequest {
+	string hash = 1;
+	models.ID partId = 2;
 }

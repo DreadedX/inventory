@@ -17,6 +17,7 @@ require (
 	github.com/lib/pq v1.6.0 // indirect
 	github.com/lithammer/fuzzysearch v1.1.3
 	github.com/mattn/go-isatty v0.0.13 // indirect
+	github.com/minio/minio-go/v7 v7.0.20 // indirect
 	github.com/skip2/go-qrcode v0.0.0-20200617195104-da1b6568686e
 	github.com/stretchr/testify v1.7.0 // indirect
 	github.com/twitchtv/twirp v8.1.1+incompatible

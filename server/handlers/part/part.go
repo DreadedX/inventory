@@ -2,9 +2,9 @@ package part
 
 import (
 	"context"
-	"os"
 	"sort"
 
+	"inventory/handlers/file"
 	"inventory/models"
 
 	"github.com/lithammer/fuzzysearch/fuzzy"
@@ -14,6 +14,7 @@ import (
 
 type Server struct {
 	DB *gorm.DB
+	FileServer *file.Server
 }
 
 func (s *Server) FetchAll(ctx context.Context, req *FetchAllRequest) (*FetchAllResponse, error) {
@@ -97,18 +98,10 @@ func (s *Server) Delete(ctx context.Context, id *models.ID) (*models.Part, error
 		}
 	}
 
-	for _, file := range part.Files {
-		if err := s.DB.Delete(&file).Error; err != nil {
-			return nil, twirp.WrapError(twirp.NewError(twirp.Internal, "Failed to delete file associated with part"), err)
-		}
-
-		// Only delete the file on disk if there are no references to it anymore
-		var count int64
-		s.DB.Model(&models.Part{}).Where("hash = ?", file.Hash).Count(&count)
-		if count == 0 {
-			if err := os.Remove(file.Filepath()); err != nil {
-				return nil, twirp.WrapError(twirp.NewError(twirp.Internal, "Failed to delete file associated with part"), err)
-			}
+	for _, f := range part.Files {
+		_, err := s.FileServer.Delete(ctx, &file.DeleteRequest{Hash: f.Hash, PartId: f.PartId})
+		if err != nil {
+			return nil, twirp.WrapError(twirp.NewError(twirp.Internal, "Failed to remove old file from part"), err)
 		}
 	}
 
@@ -169,16 +162,9 @@ func (s *Server) Update(ctx context.Context, part *models.Part) (*models.Part, e
 		}
 
 		// File is removed
-		if err := s.DB.Delete(&l1).Error; err != nil {
+		_, err := s.FileServer.Delete(ctx, &file.DeleteRequest{Hash: l1.Hash, PartId: l1.PartId})
+		if err != nil {
 			return nil, twirp.WrapError(twirp.NewError(twirp.Internal, "Failed to remove old file from part"), err)
-		}
-
-		var count int64
-		s.DB.Model(&models.File{}).Where("hash = ?", l1.Hash).Count(&count)
-		if count == 0 {
-			if err := os.Remove(l1.Filepath()); err != nil {
-				return nil, twirp.WrapError(twirp.NewError(twirp.Internal, "Failed to delete file associated with part"), err)
-			}
 		}
 	}
 
