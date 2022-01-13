@@ -14,6 +14,7 @@ import * as Label from "../handlers/label/label.pb";
 import * as FileHandler from "../handlers/file/file.pb";
 import { DropdownItemProps, Message } from "semantic-ui-react";
 import { cloneDeep } from "lodash";
+import { NewFile } from "../lib/upload";
 
 interface Props {
 	editing?: boolean
@@ -30,7 +31,7 @@ export const PartView: FC<Props> = ({ editing }: Props) => {
 	const [ editedPart, setEditedPart ] = useState<models.Part>();
 	const [ hasEdited, setHasEdited ] = useState(false);
 	const [ availableStorage, setAvailableStorage ] = useState<DropdownItemProps[]>();
-	const [ files, setFiles ] = useState<File[]>([])
+	const [ files, setFiles ] = useState<NewFile[]>([])
 
 	const [ modal, setModal ] = useState<OpenModal>(OpenModal.None)
 	const [ labelPreview, setLabelPreview ] = useState<string>();
@@ -105,29 +106,37 @@ export const PartView: FC<Props> = ({ editing }: Props) => {
 
 				setLoading({...loading, save: true})
 
-				// @TODO We want to await all of the uploads before we update the part
-				// However for some reason using await breaks the Upload functions
-				// I have no explaination for this...
-				files.map(async (file: File): Promise<void> => {
-					// @TODO For some reason using await here causes it to not actually update the database???
-					FileHandler.Upload({
-						data: new Uint8Array(await file.arrayBuffer()),
-						filename: file?.name,
-						partId: part.id
-					}).then(f => {
-						console.log(f)
-					}).catch(handleError(setMessage))
-				})
-				setFiles([])
+				try {
+					const finalPart = cloneDeep(editedPart)
 
-				Part.Update(editedPart).then(resp => {
+					for (const {file, index} of files) {
+						const buffer = await file.arrayBuffer()
+						const data = new Uint8Array(buffer);
+						const f = await FileHandler.Upload({
+							data,
+							filename: file.name,
+							partId: part.id
+						})
+
+						finalPart.files[index] = f
+						// @TODO We need to remove from the files array,
+						// that way if one of the upload fails, we do not get duplicate uploads
+					}
+					setFiles([])
+
+					const resp = await Part.Update(finalPart)
 					setPart(resp)
-					navigate("..")
+
 					setMessage(undefined)
 					setHasEdited(false);
-				}).catch(handleError(setMessage)).finally(() => {
-					setLoading({...loading, save: false})
-				})
+
+					navigate("..")
+				} catch(e: any) {
+					handleError(setMessage)(e)
+					return
+				}
+
+				setLoading({...loading, save: false})
 			},
 		}
 	];
@@ -185,8 +194,8 @@ export const PartView: FC<Props> = ({ editing }: Props) => {
 		})
 	}
 
-	const addFile = (file: File) => {
-		setFiles([...files, file])
+	const addFile = (newFile: NewFile) => {
+		setFiles([...files, newFile])
 	}
 
 	// @TODO Redirect people to the 404 page

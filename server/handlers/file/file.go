@@ -62,7 +62,7 @@ func (s *Server) Download(c *gin.Context) {
 	}
 
 	// Read the data
-	data := make([]byte, stat.Size + 1)
+	data := make([]byte, stat.Size)
 	_, err = object.Read(data)
 	if err != nil && err != io.EOF {
 		log.Println("Read err", err)

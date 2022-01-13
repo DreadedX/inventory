@@ -101,7 +101,7 @@ func (s *Server) Delete(ctx context.Context, id *models.ID) (*models.Part, error
 	for _, f := range part.Files {
 		_, err := s.FileServer.Delete(ctx, &file.DeleteRequest{Hash: f.Hash, PartId: f.PartId})
 		if err != nil {
-			return nil, twirp.WrapError(twirp.NewError(twirp.Internal, "Failed to remove old file from part"), err)
+			return nil, err
 		}
 	}
 
@@ -164,7 +164,7 @@ func (s *Server) Update(ctx context.Context, part *models.Part) (*models.Part, e
 		// File is removed
 		_, err := s.FileServer.Delete(ctx, &file.DeleteRequest{Hash: l1.Hash, PartId: l1.PartId})
 		if err != nil {
-			return nil, twirp.WrapError(twirp.NewError(twirp.Internal, "Failed to remove old file from part"), err)
+			return nil, err
 		}
 	}
 

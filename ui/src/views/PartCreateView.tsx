@@ -13,6 +13,7 @@ import * as Storage from "../handlers/storage/storage.pb";
 import * as FileHandler from "../handlers/file/file.pb";
 import { TwirpError } from "twirpscript/dist";
 import { cloneDeep } from "lodash";
+import { NewFile } from "../lib/upload";
 
 export const PartCreateView: FC = () => {
 	const [ part, setPart ] = useState<models.Part>(models.Part.defaultValue());
@@ -20,7 +21,7 @@ export const PartCreateView: FC = () => {
 	const [ modal, setModal ] = useState<OpenModal>(OpenModal.None)
 	const [ message, setMessage ] = useState<ErrorMessage>();
 	const [ availableStorage, setAvailableStorage ] = useState<DropdownItemProps[]>();
-	const [ files, setFiles ] = useState<File[]>([])
+	const [ files, setFiles ] = useState<NewFile[]>([])
 	const [ searchParams ] = useSearchParams();
 
 	const navigate = useNavigate();
@@ -81,42 +82,50 @@ export const PartCreateView: FC = () => {
 		},
 		{
 			icon: "save",
-			on: () => {
+			on: async () => {
 				// We should not be able to press the button if there is no part loaded
 				if (part === undefined) {
 					return
 				}
 
 				setLoading({...loading, save: true})
-				//
-				// @TODO We want to await all of the uploads before we update the part
-				// However for some reason using await breaks the Upload functions
-				// I have no explaination for this...
-				files.map(async (file: File): Promise<void> => {
-					// @TODO For some reason using await here causes it to not actually update the database???
-					FileHandler.Upload({
-						data: new Uint8Array(await file.arrayBuffer()),
-						filename: file?.name,
-						partId: part.id
-					}).then(f => {
-						console.log(f)
-					}).catch(handleError(setMessage))
-				})
-				setFiles([])
-				
-				Part.Create(part).then(resp => {
+
+				try {
+					const finalPart = cloneDeep(part)
+
+					for (const {file, index} of files) {
+						const buffer = await file.arrayBuffer()
+						const data = new Uint8Array(buffer);
+						const f = await FileHandler.Upload({
+							data,
+							filename: file.name,
+							partId: part.id
+						})
+
+						finalPart.files[index] = f
+						// @TODO We need to remove from the files array,
+						// that way if one of the upload fails, we do not get duplicate uploads
+					}
+					setFiles([])
+
+					const resp = await Part.Update(finalPart)
 					setPart(resp)
-					navigate(`../${resp.id.id}`)
+
 					setMessage(undefined)
-				}).catch(handleError(setMessage)).finally(() => {
-					setLoading({...loading, save: false})
-				})
+
+					navigate(`../${resp.id.id}`)
+				} catch(e: any) {
+					handleError(setMessage)(e)
+					return
+				}
+
+				setLoading({...loading, save: false})
 			},
 		}
 	];
 
-	const addFile = (file: File) => {
-		setFiles([...files, file])
+	const addFile = (newFile: NewFile) => {
+		setFiles([...files, newFile])
 	}
 
 	return (<Fragment>

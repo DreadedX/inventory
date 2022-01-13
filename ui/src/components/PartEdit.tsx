@@ -7,6 +7,7 @@ import { LoadingStatus } from "../lib/loading";
 
 import { ModalQrScanner, useHasCamera } from ".";
 import { cloneDeep } from "lodash";
+import { NewFile } from "../lib/upload";
 
 export interface PartEditFunctions {
 	onChange: (event: ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => void
@@ -19,7 +20,7 @@ export interface PartEditFunctions {
 interface Props {
 	part: models.Part | undefined
 	availableStorage: DropdownItemProps[] | undefined
-	addFile: (file: File) => void
+	addFile: (newFile: NewFile) => void
 	addStorage: (name: string, callback: (id: models.ID) => void) => void
 	updatePart: (part: models.Part) => void
 	loading: LoadingStatus
@@ -126,7 +127,7 @@ export const PartEdit: FC<Props> = ({ part, availableStorage, addStorage, addFil
 			const files = event.target.files
 			if (files !== null && files.length > 0) {
 
-				addFile(files[0])
+				addFile({file: files[0], index})
 
 				const newState = cloneDeep(part)
 				newState.files.push({
