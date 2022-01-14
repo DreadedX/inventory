@@ -43,9 +43,8 @@ RUN yarn link semantic-ui-css
 COPY --from=build-proto /src/proto ../proto
 COPY ui .
 
-RUN cd ../proto && ls ../ui/node_modules/twirpscript && ./generate_twirpscript.sh
+RUN cd ../proto && ./generate_twirpscript.sh
 
-# ENV NODE_OPTIONS=--openssl-legacy-provider
 RUN yarn build
 
 
