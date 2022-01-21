@@ -14,7 +14,7 @@ import (
 
 type Server struct {
 	DB *gorm.DB
-	FileServer *file.Server
+	FileServer file.File
 }
 
 func (s *Server) FetchAll(ctx context.Context, req *FetchAllRequest) (*FetchAllResponse, error) {
