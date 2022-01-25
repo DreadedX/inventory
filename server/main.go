@@ -78,7 +78,11 @@ func initStorage() file.Storage {
 		storagePass = "testuser"
 	}
 
-	_, storageSecure := os.LookupEnv("STORAGE_SECURE")
+	storageSecureValue, ok := os.LookupEnv("STORAGE_SECURE")
+	storageSecure := false
+	if ok && storageSecureValue=="true" {
+		storageSecure = true
+	}
 
 	var storage file.Storage
 	storage.BucketName, ok = os.LookupEnv("STORAGE_BUCKET")
