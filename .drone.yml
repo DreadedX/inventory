@@ -29,6 +29,16 @@ steps:
               from_secret: DB_PASS
           DEVICE:
               from_secret: DEVICE
+          STORAGE_HOST:
+              from_secret: STORAGE_HOST
+          STORAGE_USER:
+              from_secret: STORAGE_USER
+          STORAGE_PASS:
+              from_secret: STORAGE_PASS
+          STORAGE_SECURE:
+              from_secret: STORAGE_SECURE
+          STORAGE_BUCKET:
+              from_secret: STORAGE_BUCKET
       commands:
           - docker stop inventory || true
           - docker stop printer || true
