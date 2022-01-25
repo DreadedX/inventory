@@ -26,16 +26,8 @@ services:
         image: minio/minio
         ports:
             - "9000:9000"
+            - "9001:9001"
         restart: on-failure
         volumes:
             - ./data/minio:/data
-        command: server /data
-
-    storage-console:
-        image: minio/console
-        ports:
-            - "9090:9090"
-        restart: on-failure
-        environment:
-            CONSOLE_MINIO_SERVER: http://storage:9000
-        command: server
+        command: server /data --console-address ":9001"
