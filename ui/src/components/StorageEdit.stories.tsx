@@ -22,8 +22,8 @@ export const Normal = Template.bind({})
 Normal.args = {
 	storage: StorageDetailStories.Normal.args?.storage,
 	loading: {...LoadingStatus.defaultValue(), fetch: false, options: false},
-	updateStorage: (storage: models.Storage) => {
-		console.log(storage)
+	updateStorage: () => {
+		console.log("Update storage")
 	}
 }
 

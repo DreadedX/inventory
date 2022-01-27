@@ -9,12 +9,13 @@ import { LoadingStatus } from "../lib/loading";
 import { ToolbarSearch, ToolbarFunction } from "../components/Toolbar";
 import { Icon, Message, Pagination, PaginationProps } from "semantic-ui-react";
 import { useNavigate, useSearchParams } from "react-router-dom";
+import { useImmer } from "use-immer";
 
 export const PartsView: FC = () => {
 	const [ parts, setParts ] = useState<models.Part[]>([]);
 	const [ message, setMessage ] = useState<ErrorMessage>();
 
-	const [ loading, setLoading ] = useState<LoadingStatus>(LoadingStatus.defaultValue());
+	const [ loading, setLoading ] = useImmer<LoadingStatus>(LoadingStatus.defaultValue());
 
 	const [ searchParams, setSearchParams ] = useSearchParams();
 
@@ -25,7 +26,7 @@ export const PartsView: FC = () => {
 	useEffect(() => {
 		setParts([])
 		setMessage(undefined)
-		setLoading(l => ({...l, fetch: true}))
+		setLoading(draft => {draft.fetch = true})
 
 		Part.FetchAll({query: search}).then(resp => {
 			setParts(resp.parts)
@@ -36,7 +37,7 @@ export const PartsView: FC = () => {
 			}
 			return false;
 		})).finally(() => {
-			setLoading(l => ({...l, fetch: false}))
+			setLoading(draft => { draft.fetch = false })
 		})
 	}, [search]);
 
@@ -56,7 +57,7 @@ export const PartsView: FC = () => {
 
 		// Reset the page when we search
 		setSearchParams({search: query}, {replace: true})
-		setLoading({...loading, search: true})
+		setLoading(draft => {draft.search = true})
 
 		Part.FetchAll({query}).then(resp => {
 			setParts(resp.parts)
@@ -67,7 +68,7 @@ export const PartsView: FC = () => {
 			}
 			return false;
 		})).finally(() => {
-			setLoading({...loading, search: false})
+			setLoading(draft => {draft.search = false})
 		})
 	}
 

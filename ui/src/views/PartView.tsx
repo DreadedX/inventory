@@ -15,6 +15,7 @@ import * as FileHandler from "../handlers/file/file.pb";
 import { DropdownItemProps, Message } from "semantic-ui-react";
 import { cloneDeep } from "lodash";
 import { NewFile } from "../lib/upload";
+import { useImmer } from "use-immer";
 
 interface Props {
 	editing?: boolean
@@ -24,28 +25,32 @@ interface Props {
 export const PartView: FC<Props> = ({ editing }: Props) => {
 	const { id } = useParams();
 
-	const [ part, setPart ] = useState<models.Part>();
+	const [ part, setPart ] = useState<models.Part>(models.Part.defaultValue());
 	const [ notFound, setNotFound ] = useState<boolean>(false);
 	const [ message, setMessage ] = useState<ErrorMessage>();
 
-	const [ editedPart, setEditedPart ] = useState<models.Part>();
+	const [ editedPart, setEditedPart ] = useImmer<models.Part>(models.Part.defaultValue());
 	const [ hasEdited, setHasEdited ] = useState(false);
-	const [ availableStorage, setAvailableStorage ] = useState<DropdownItemProps[]>();
-	const [ files, setFiles ] = useState<NewFile[]>([])
+	const [ availableStorage, setAvailableStorage ] = useImmer<DropdownItemProps[]>([]);
+	const [ files, setFiles ] = useImmer<NewFile[]>([])
 
 	const [ modal, setModal ] = useState<OpenModal>(OpenModal.None)
 	const [ labelPreview, setLabelPreview ] = useState<string>();
 
-	const [ loading, setLoading ] = useState<LoadingStatus>(LoadingStatus.defaultValue())
+	const [ loading, setLoading ] = useImmer<LoadingStatus>(LoadingStatus.defaultValue())
 
 	const navigate = useNavigate();
 
 	useEffect(() => {
+		// @TODO Can we do this better
 		setEditedPart(cloneDeep(part))
 	}, [part])
 
 	useEffect(() => {
-		setLoading(l => ({...l, fetch: part === undefined, options: availableStorage === undefined}))
+		setLoading(draft => {
+			draft.fetch = part === undefined
+			draft.options = availableStorage === undefined
+		})
 	}, [part, availableStorage])
 
 	useEffect(() => {
@@ -54,11 +59,12 @@ export const PartView: FC<Props> = ({ editing }: Props) => {
 			return
 		}
 
-		setPart(undefined)
+		setLoading(draft => {draft.fetch = true})
 		setMessage(undefined)
 
 		Part.Fetch({id: id}).then(resp => {
 			setPart(resp)
+			setLoading(draft => {draft.fetch = false})
 		}).catch(handleError(setMessage, (e: TwirpError) => {
 			if (e.code === "not_found") {
 				setNotFound(true);
@@ -69,11 +75,13 @@ export const PartView: FC<Props> = ({ editing }: Props) => {
 	}, [id]);
 
 	useEffect(() => {
+		setLoading(draft => {draft.options = true})
 		if (editing) {
 			Storage.FetchAll({query: ""}).then(resp => {
 				const options = resp.storages.map(transformStorageToOption);
 
 				setAvailableStorage(options)
+				setLoading(draft => {draft.options = false})
 			}).catch(handleError(setMessage, (e: TwirpError) => {
 				return e.code === "not_found";
 			}))
@@ -99,12 +107,7 @@ export const PartView: FC<Props> = ({ editing }: Props) => {
 		{
 			icon: "save",
 			on: async () => {
-				// We should not be able to press the button if there is no part loaded
-				if (part === undefined || editedPart === undefined) {
-					return
-				}
-
-				setLoading({...loading, save: true})
+				setLoading(draft => {draft.save = true})
 
 				try {
 					const finalPart = cloneDeep(editedPart)
@@ -136,7 +139,7 @@ export const PartView: FC<Props> = ({ editing }: Props) => {
 					return
 				}
 
-				setLoading({...loading, save: false})
+				setLoading(draft => {draft.save = false})
 			},
 		}
 	];
@@ -145,10 +148,6 @@ export const PartView: FC<Props> = ({ editing }: Props) => {
 		{
 			icon: "print",
 			on: () => {
-				if (part === undefined) {
-					return
-				}
-
 				setLabelPreview(undefined)
 
 				Label.Preview({id: part.id, type: Label.Type.PART}).then(resp => {
@@ -178,7 +177,7 @@ export const PartView: FC<Props> = ({ editing }: Props) => {
 	];
 
 	const addStorage = (name: string, callback: (id: models.ID) => void) => {
-		setLoading({...loading, options: true})
+		setLoading(draft => {draft.options = true})
 
 		Storage.Create({...models.Storage.defaultValue(), name}).then(resp => {
 			let options = [transformStorageToOption(resp)];
@@ -190,12 +189,12 @@ export const PartView: FC<Props> = ({ editing }: Props) => {
 
 			callback(resp.id)
 		}).catch(handleError(setMessage)).finally(() => {
-			setLoading({...loading, options: false})
+			setLoading(draft => {draft.options = false})
 		})
 	}
 
 	const addFile = (newFile: NewFile) => {
-		setFiles([...files, newFile])
+		setFiles(draft => {draft.push(newFile)})
 	}
 
 	// @TODO Redirect people to the 404 page
@@ -209,12 +208,7 @@ export const PartView: FC<Props> = ({ editing }: Props) => {
 			deleting={loading.delete}
 			onCancel={() => setModal(OpenModal.None)}
 			onConfirm={() => {
-				// We should not be able to press the button if there is no part loaded
-				if (part === undefined) {
-					return
-				}
-
-				setLoading({...loading, delete: true})
+				setLoading(draft => {draft.delete = true})
 
 				Part.Delete(part.id).then(() => {
 					navigate("../..", {replace: true})
@@ -222,7 +216,7 @@ export const PartView: FC<Props> = ({ editing }: Props) => {
 					handleError(setMessage)(e)
 					// We put this in catch instead of finally,
 					// as succes lead to a page change
-					setLoading({...loading, delete: false})
+					setLoading(draft => {draft.delete = false})
 					setModal(OpenModal.None)
 				})
 			}}
@@ -245,14 +239,10 @@ export const PartView: FC<Props> = ({ editing }: Props) => {
 			preview={labelPreview}
 			onCancel={() => setModal(OpenModal.None)}
 			onConfirm={() => {
-				if (part === undefined) {
-					return
-				}
-
-				setLoading({...loading, print: true})
+				setLoading(draft => {draft.print = true})
 
 				Label.Print({id: part.id, type: Label.Type.PART}).catch(handleError(setMessage)).finally(() => {
-					setLoading({...loading, print: false})
+					setLoading(draft => {draft.print = false})
 					setModal(OpenModal.None)
 				})
 			}}

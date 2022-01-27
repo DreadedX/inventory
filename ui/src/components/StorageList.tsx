@@ -15,7 +15,7 @@ const Item: FC<ItemProps> = ({ storage }: ItemProps) => {
 			{storage.name}
 		</Table.Cell>
 		<Table.Cell textAlign="center">
-			{storage?.partCount || 0}
+			{storage.partCount}
 		</Table.Cell>
 	</Table.Row>);
 }

@@ -14,14 +14,15 @@ import * as FileHandler from "../handlers/file/file.pb";
 import { TwirpError } from "twirpscript/dist";
 import { cloneDeep } from "lodash";
 import { NewFile } from "../lib/upload";
+import { useImmer } from "use-immer";
 
 export const PartCreateView: FC = () => {
-	const [ part, setPart ] = useState<models.Part>(models.Part.defaultValue());
-	const [ loading, setLoading ] = useState<LoadingStatus>({...LoadingStatus.defaultValue(), fetch: false})
+	const [ part, setPart ] = useImmer<models.Part>(models.Part.defaultValue());
+	const [ loading, setLoading ] = useImmer<LoadingStatus>({...LoadingStatus.defaultValue(), fetch: false})
 	const [ modal, setModal ] = useState<OpenModal>(OpenModal.None)
 	const [ message, setMessage ] = useState<ErrorMessage>();
-	const [ availableStorage, setAvailableStorage ] = useState<DropdownItemProps[]>();
-	const [ files, setFiles ] = useState<NewFile[]>([])
+	const [ availableStorage, setAvailableStorage ] = useImmer<DropdownItemProps[]>([]);
+	const [ files, setFiles ] = useImmer<NewFile[]>([])
 	const [ searchParams ] = useSearchParams();
 
 	const navigate = useNavigate();
@@ -29,42 +30,33 @@ export const PartCreateView: FC = () => {
 
 	useEffect(() => {
 		if (storageId) {
-			setPart(p => {
-				const newState = cloneDeep(p)
-				newState.storageId = { id: storageId }
-				return newState
+			setPart(draft => {
+				draft.storageId.id = storageId
 			});
 		}
 	}, [storageId]);
 
 	useEffect(() => {
-		setLoading(l => ({...l, options: availableStorage === undefined}))
-	}, [part, availableStorage])
-
-	useEffect(() => {
+		setLoading(draft => {draft.options = true})
 		Storage.FetchAll({query: ""}).then(resp => {
 			const options = resp.storages.map(transformStorageToOption);
 
 			setAvailableStorage(options)
+			setLoading(draft => {draft.options = false})
 		}).catch(handleError(setMessage, (e: TwirpError) => {
 			return e.code === "not_found";
 		}))
 	}, [])
 
 	const addStorage = (name: string, callback: (id: models.ID) => void) => {
-		setLoading({...loading, options: true})
+		setLoading(draft => {draft.options = true})
 
 		Storage.Create({...models.Storage.defaultValue(), name}).then(resp => {
-			let options = [transformStorageToOption(resp)];
-			if (availableStorage !== undefined) {
-				options = [...availableStorage, transformStorageToOption(resp)];
-			}
-
-			setAvailableStorage(options);
+			setAvailableStorage(draft => {draft.push(transformStorageToOption(resp))});
 
 			callback(resp.id)
 		}).catch(handleError(setMessage)).finally(() => {
-			setLoading({...loading, options: false})
+			setLoading(draft => {draft.options = false})
 		})
 	}
 
@@ -83,12 +75,7 @@ export const PartCreateView: FC = () => {
 		{
 			icon: "save",
 			on: async () => {
-				// We should not be able to press the button if there is no part loaded
-				if (part === undefined) {
-					return
-				}
-
-				setLoading({...loading, save: true})
+				setLoading(draft => {draft.save = true})
 
 				try {
 					const finalPart = cloneDeep(part)
@@ -119,13 +106,13 @@ export const PartCreateView: FC = () => {
 					return
 				}
 
-				setLoading({...loading, save: false})
+				setLoading(draft => {draft.save = false})
 			},
 		}
 	];
 
 	const addFile = (newFile: NewFile) => {
-		setFiles([...files, newFile])
+		setFiles(draft => {draft.push(newFile)})
 	}
 
 	return (<Fragment>

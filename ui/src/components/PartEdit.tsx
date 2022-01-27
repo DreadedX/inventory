@@ -6,8 +6,8 @@ import { Button, DropdownItemProps, DropdownProps, Form, Input, Segment } from "
 import { LoadingStatus } from "../lib/loading";
 
 import { ModalQrScanner, useHasCamera } from ".";
-import { cloneDeep } from "lodash";
 import { NewFile } from "../lib/upload";
+import { DraftFunction } from "use-immer";
 
 export interface PartEditFunctions {
 	onChange: (event: ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => void
@@ -18,11 +18,11 @@ export interface PartEditFunctions {
 }
 
 interface Props {
-	part: models.Part | undefined
-	availableStorage: DropdownItemProps[] | undefined
+	part: models.Part
+	availableStorage: DropdownItemProps[]
 	addFile: (newFile: NewFile) => void
 	addStorage: (name: string, callback: (id: models.ID) => void) => void
-	updatePart: (part: models.Part) => void
+	updatePart: (df: DraftFunction<models.Part>) => void
 	loading: LoadingStatus
 	attached?: boolean
 }
@@ -33,109 +33,74 @@ export const PartEdit: FC<Props> = ({ part, availableStorage, addStorage, addFil
 	const fileUploadRef = useRef<HTMLInputElement>(null)
 
 	const onChange = (event: ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
-		if (part === undefined) {
-			return
-		}
+		updatePart(draft => {
+			switch (event.target.name) {
+				case "name":
+				case "footprint":
+				case "description":
+				draft[event.target.name] = event.target.value;
+					break;
 
-		const newState = cloneDeep(part)
-		switch (event.target.name) {
-			case "name":
-			case "footprint":
-			case "description":
-			newState[event.target.name] = event.target.value;
-				break;
+				case "quantity":
+				draft.quantity = parseInt(event.target.value);
+					break;
 
-			case "quantity":
-			newState.quantity = parseInt(event.target.value);
-				break;
+				case "link":
+				// @TODO Find a better solution to gettnig the indx then using the html id
+					draft.links[Number(event.target.id)].url = event.target.value;
+					break;
 
-			case "link":
-			// @TODO Find a better solution to gettnig the indx then using the html id
-				newState.links[Number(event.target.id)].url = event.target.value;
-				break;
-
-			default:
-			console.error("UNKNOWN NAME", event.target.name, event)
-		}
-
-		updatePart(newState);
+				default:
+				console.error("UNKNOWN NAME", event.target.name, event)
+			}
+		})
 	}
 
 	const onChangeStorage = (_event: SyntheticEvent<HTMLElement>, data: DropdownProps) => {
-		if (part === undefined) {
-			return
-		}
-
-		// @TODO if the storage is being created data.value will instead hold the text value...
-		const newState = cloneDeep(part)
-		newState.storageId = {...models.ID.defaultValue(), id: data.value as string}
-
-		updatePart(newState)
+		updatePart(draft => {
+			draft.storageId.id = data.value as string
+		})
 	}
 
 	const onAddStorage = (_event: SyntheticEvent<HTMLElement>, data: DropdownProps) => {
-		if (part === undefined) {
-			return
-		}
-
 		addStorage(data.value as string, (id: models.ID) => {
-			const newState = cloneDeep(part);
-			newState.storageId = id;
-			updatePart(newState);
+			updatePart(draft => {
+				draft.storageId = id
+			})
 		})
 	}
 
 	const onRemoveLink = (index: number) => {
-		if (part === undefined) {
-			return
-		}
-
-		const newState = cloneDeep(part)
-		newState.links.splice(index, 1)
-
-		updatePart(newState)
+		updatePart(draft => {
+			draft.links.splice(index, 1)
+		})
 	}
 
 	const onAddLink = () => {
-		if (part === undefined) {
-			return
-		}
-
-		const newState = cloneDeep(part)
-		newState.links.push(models.Link.defaultValue())
-
-		updatePart(newState)
+		updatePart(draft => {
+			draft.links.push(models.Link.defaultValue())
+		})
 	}
 
 	const onRemoveFile = (index: number) => {
-		if (part === undefined) {
-			return
-		}
-
-		const newState = cloneDeep(part)
-		newState.files.splice(index, 1)
-
-		updatePart(newState)
+		updatePart(draft => {
+			draft.files.splice(index, 1)
+		})
 	}
 
 	const onFileUpload = (index: number) => {
 		return (event: ChangeEvent<HTMLInputElement>) => {
-			if (part === undefined) {
-				return
-			}
-
 			const files = event.target.files
 			if (files !== null && files.length > 0) {
 
 				addFile({file: files[0], index})
 
-				const newState = cloneDeep(part)
-				newState.files.push({
-					...models.File.defaultValue(),
-					filename: files[0].name
+				updatePart(draft => {
+					draft.files.push({
+						...models.File.defaultValue(),
+						filename: files[0].name
+					})
 				})
-
-				updatePart(newState)
 			}
 		}
 	}
@@ -144,30 +109,26 @@ export const PartEdit: FC<Props> = ({ part, availableStorage, addStorage, addFil
 		<ModalQrScanner hint="Scan storage QR code" open={scannerOpen} onCancel={() => setScannerOpen(false)} onScan={(id, type) => {
 			// @TODO Actually make this check work properly
 			// Also give feedback to the user
-			if (part === undefined) {
-				return
-			}
-
 			if (type !== Label.Type.STORAGE) {
 				return
 			}
 
-			const newState = cloneDeep(part);
-			newState.storageId = id;
-			updatePart(newState);
+			updatePart(draft => {
+				draft.storageId = id;
+			})
 
 			setScannerOpen(false);
 		}} />
 		<Segment color="grey" attached={(attached) ? true : "bottom"}>
 			<Form loading={loading.fetch || loading.save}>
 				<Form.Group>
-					<Form.Input width={5} label="Name" name="name" placeholder="Name..." value={part?.name} onChange={onChange} />
-					<Form.Input width={2} label="Footprint" name="footprint" placeholder="Footprint..." value={part?.footprint} onChange={onChange} />
-					<Form.Input min={0} width={2} label="Quantity" type="number" name="quantity" placeholder="0" value={part?.quantity} onChange={onChange} />
+					<Form.Input width={5} label="Name" name="name" placeholder="Name..." value={part.name} onChange={onChange} />
+					<Form.Input width={2} label="Footprint" name="footprint" placeholder="Footprint..." value={part.footprint} onChange={onChange} />
+					<Form.Input min={0} width={2} label="Quantity" type="number" name="quantity" placeholder="0" value={part.quantity} onChange={onChange} />
 
 					<Form.Field>
 						<label>Storage</label>
-						<Form.Dropdown name="storage" placeholder="No storage..." value={part?.storageId.id || ""} allowAdditions clearable search selection additionLabel="Create storage: " options={availableStorage} onAddItem={onAddStorage} onChange={onChangeStorage} loading={loading.options} />
+						<Form.Dropdown name="storage" placeholder="No storage..." value={part.storageId.id || ""} allowAdditions clearable search selection additionLabel="Create storage: " options={availableStorage} onAddItem={onAddStorage} onChange={onChangeStorage} loading={loading.options} />
 					</Form.Field>
 
 					{ hasCamera && <Form.Field>
@@ -179,12 +140,12 @@ export const PartEdit: FC<Props> = ({ part, availableStorage, addStorage, addFil
 
 				<Form.Field>
 					<label>Description</label>
-					<TextareaAutosize minRows={10} name="description" placeholder="Description..." value={part?.description} onChange={onChange} />
+					<TextareaAutosize minRows={10} name="description" placeholder="Description..." value={part.description} onChange={onChange} />
 				</Form.Field>
 
 				<Form.Field width={8}>
 					<label>Links</label>
-					{part?.links.map((link, index) => (<Form.Field key={index}>
+					{part.links.map((link, index) => (<Form.Field key={index}>
 						<Input id={index} name="link" action={{color: 'red', icon: 'trash', onClick: () => onRemoveLink(index)}} label="https://"  value={link.url} onChange={onChange} />
 					</Form.Field>))}
 					<Button onClick={onAddLink}>Add URL</Button>
@@ -192,10 +153,10 @@ export const PartEdit: FC<Props> = ({ part, availableStorage, addStorage, addFil
 
 				<Form.Field width={4}>
 					<label>Files</label>
-					{part?.files.map((file, index) => (<Form.Field key={index}>
+					{part.files.map((file, index) => (<Form.Field key={index}>
 						<Input id={index} name="file" icon="file" iconPosition="left" action={{color: 'red', icon: 'trash', onClick: () => onRemoveFile(index)}} readOnly value={file.filename} />
 					</Form.Field>))}
-					<input ref={fileUploadRef} type="file" style={{display: "none"}} onChange={onFileUpload(part?.files.length || 0)} />
+					<input ref={fileUploadRef} type="file" style={{display: "none"}} onChange={onFileUpload(part.files.length || 0)} />
 					<Button onClick={() => fileUploadRef.current?.click()}>Upload file</Button>
 				</Form.Field>
 			</Form>

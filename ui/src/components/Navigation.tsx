@@ -28,7 +28,7 @@ export const Navigation: FC = () => {
 			setScannerOpen(false);
 		}} />
 		<Menu size="large">
-			<Menu.Item as={NavLink} to="" exact={true}>
+			<Menu.Item as={NavLink} to="" exact="true">
 				<Icon name="home" />
 			</Menu.Item>
 			<Menu.Item as={NavLink} to="/part">

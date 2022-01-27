@@ -42,7 +42,7 @@ const FieldFile: FC<FieldFileProps & Record<string, any>> = ({ file, ...props }:
 }
 
 interface Props {
-	part: models.Part | undefined
+	part: models.Part
 	loading: LoadingStatus
 	attached?: boolean
 }
@@ -51,32 +51,32 @@ export const PartDetail: FC<Props> = ({ part, loading, attached }: Props) => {
 	const [outOfStock, setOutOfStock] = useState<boolean>(false)
 
 	useEffect(() => {
-		setOutOfStock(part?.quantity === 0)
+		setOutOfStock(part.quantity === 0 && loading.fetch == false)
 	}, [part])
 
 	return (<Fragment>
 		<Segment color="grey" attached={(attached || outOfStock) ? true : "bottom"}>
 			<Form>
 				<Form.Group>
-					<Field width={5} label="Name" value={part?.name} loading={loading.fetch}/>
-					<Field width={2} label="Footprint" value={part?.footprint} loading={loading.fetch}/>
-					<Field width={2} label="Quantity" value={part?.quantity} loading={loading.fetch} placeholder={"0"} />
+					<Field width={5} label="Name" value={part.name} loading={loading.fetch}/>
+					<Field width={2} label="Footprint" value={part.footprint} loading={loading.fetch}/>
+					<Field width={2} label="Quantity" value={part.quantity} loading={loading.fetch} placeholder={"0"} />
 
-					<Field as={part?.storage?.id.id ? Link : undefined} to={`/storage/${part?.storage?.id.id}`} width={5} label="Storage" value={part?.storage?.name} loading={loading.fetch}/>
+					<Field as={part.storage?.id.id ? Link : undefined} to={`/storage/${part.storage?.id.id}`} width={5} label="Storage" value={part.storage?.name} loading={loading.fetch}/>
 
 				</Form.Group>
 
-				<Field width={16} label="Description" value={part?.description} loading={loading.fetch}/>
+				<Field width={16} label="Description" value={part.description} loading={loading.fetch}/>
 
 				<Form.Group>
-					{ part?.links && part?.links.length > 0 && <Form.Field width={8}>
+					{ part.links && part.links.length > 0 && <Form.Field width={8}>
 						<label>Links</label>
-						{ part?.links?.map((link, index) => (<FieldLink link={link} key={index} />)) }
+						{ part.links?.map((link, index) => (<FieldLink link={link} key={index} />)) }
 					</Form.Field> }
 
-					{ part?.files && part?.files.length > 0 && <Form.Field width={8}>
+					{ part.files && part.files.length > 0 && <Form.Field width={8}>
 						<label>Files</label>
-							{ part?.files?.map((file, index) => (<FieldFile file={file} key={index} />)) }
+							{ part.files?.map((file, index) => (<FieldFile file={file} key={index} />)) }
 					</Form.Field> }
 				</Form.Group>
 			</Form>

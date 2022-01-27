@@ -11,6 +11,7 @@ import { ModalDelete, ModalDiscard, ModalPrint, NotFound, StorageDetail, Storage
 import { ToolbarFunction } from "../components/Toolbar";
 import { cloneDeep } from "lodash";
 import { Message } from "semantic-ui-react";
+import { useImmer } from "use-immer";
 
 interface Props {
 	editing?: boolean
@@ -19,17 +20,17 @@ interface Props {
 export const StorageView: FC<Props> = ({ editing }: Props) => {
 	const { id } = useParams();
 
-	const [ storage, setStorage ] = useState<models.Storage>();
+	const [ storage, setStorage ] = useState<models.Storage>(models.Storage.defaultValue());
 	const [ notFound, setNotFound ] = useState<boolean>(false);
 	const [ message, setMessage ] = useState<ErrorMessage>();
 
-	const [ editedStorage, setEditedStorage ] = useState<models.Storage>();
+	const [ editedStorage, setEditedStorage ] = useImmer<models.Storage>(models.Storage.defaultValue());
 	const [ hasEdited, setHasEdited ] = useState(false);
 
 	const [ modal, setModal ] = useState<OpenModal>(OpenModal.None)
 	const [ labelPreview, setLabelPreview ] = useState<string>();
 
-	const [ loading, setLoading ] = useState<LoadingStatus>(LoadingStatus.defaultValue())
+	const [ loading, setLoading ] = useImmer<LoadingStatus>(LoadingStatus.defaultValue())
 
 	const navigate = useNavigate();
 
@@ -38,20 +39,17 @@ export const StorageView: FC<Props> = ({ editing }: Props) => {
 	}, [storage])
 
 	useEffect(() => {
-		setLoading(l => ({...l, fetch: storage === undefined}))
-	}, [storage])
-
-	useEffect(() => {
 		if (id === undefined) {
 			setNotFound(true)
 			return
 		}
 
-		setStorage(undefined)
+		setLoading(draft => {draft.fetch = true})
 		setMessage(undefined)
 
 		Storage.Fetch({id: id}).then(resp => {
 			setStorage(resp)
+			setLoading(draft => {draft.fetch = false})
 		}).catch(handleError(setMessage, (e: TwirpError) => {
 			if (e.code === "not_found") {
 				setNotFound(true);
@@ -89,7 +87,7 @@ export const StorageView: FC<Props> = ({ editing }: Props) => {
 					return
 				}
 
-				setLoading({...loading, save: true})
+				setLoading(draft => {draft.save = true})
 				
 				Storage.Update(editedStorage).then(resp => {
 					setStorage(resp)
@@ -97,7 +95,7 @@ export const StorageView: FC<Props> = ({ editing }: Props) => {
 					setMessage(undefined)
 					setHasEdited(false);
 				}).catch(handleError(setMessage)).finally(() => {
-					setLoading({...loading, save: false})
+					setLoading(draft => {draft.save = false})
 				})
 			},
 		}
@@ -159,7 +157,7 @@ export const StorageView: FC<Props> = ({ editing }: Props) => {
 					return
 				}
 
-				setLoading({...loading, delete: true})
+				setLoading(draft => {draft.delete = true})
 
 				Storage.Delete(storage.id).then(() => {
 					navigate("../..", {replace: true})
@@ -167,7 +165,7 @@ export const StorageView: FC<Props> = ({ editing }: Props) => {
 					handleError(setMessage)(e)
 					// We put this in catch instead of finally,
 					// as succes lead to a page change
-					setLoading({...loading, delete: false})
+					setLoading(draft => {draft.delete = false})
 					setModal(OpenModal.None)
 				})
 			}}
@@ -194,10 +192,10 @@ export const StorageView: FC<Props> = ({ editing }: Props) => {
 					return
 				}
 
-				setLoading({...loading, print: true})
+				setLoading(draft => {draft.print = true})
 
 				Label.Print({id: storage.id, type: Label.Type.STORAGE}).catch(handleError(setMessage)).finally(() => {
-					setLoading({...loading, print: false})
+					setLoading(draft => {draft.print = false})
 					setModal(OpenModal.None)
 				})
 			}}

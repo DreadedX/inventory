@@ -9,12 +9,13 @@ import { LoadingStatus } from "../lib/loading";
 import { ToolbarSearch, ToolbarFunction } from "../components/Toolbar";
 import { Icon, Message, Pagination, PaginationProps } from "semantic-ui-react";
 import { useNavigate, useSearchParams } from "react-router-dom";
+import { useImmer } from "use-immer";
 
 export const StoragesView: FC = () => {
 	const [ storage, setStorage ] = useState<models.Storage[]>([]);
 	const [ message, setMessage ] = useState<ErrorMessage>();
 
-	const [ loading, setLoading ] = useState<LoadingStatus>(LoadingStatus.defaultValue());
+	const [ loading, setLoading ] = useImmer<LoadingStatus>(LoadingStatus.defaultValue());
 
 	const [ searchParams, setSearchParams ] = useSearchParams();
 
@@ -25,7 +26,7 @@ export const StoragesView: FC = () => {
 	useEffect(() => {
 		setStorage([])
 		setMessage(undefined)
-		setLoading(l => ({...l, fetch: true}))
+		setLoading(draft => {draft.fetch = true})
 
 		Storage.FetchAll({query: search}).then(resp => {
 			setStorage(resp.storages)
@@ -36,7 +37,7 @@ export const StoragesView: FC = () => {
 			}
 			return false;
 		})).finally(() => {
-			setLoading(l => ({...l, fetch: false}))
+			setLoading(draft => {draft.fetch = false})
 		})
 	}, [search]);
 
@@ -54,7 +55,7 @@ export const StoragesView: FC = () => {
 		setMessage(undefined)
 
 		setSearchParams({search: query}, {replace: true})
-		setLoading({...loading, search: true})
+		setLoading(draft => {draft.search = true})
 
 		Storage.FetchAll({query}).then(resp => {
 			setStorage(resp.storages)
@@ -65,7 +66,7 @@ export const StoragesView: FC = () => {
 			}
 			return false;
 		})).finally(() => {
-			setLoading({...loading, search: false})
+			setLoading(draft => {draft.search = false})
 		})
 	}
 

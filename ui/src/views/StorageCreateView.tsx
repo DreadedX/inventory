@@ -8,12 +8,13 @@ import { useNavigate } from "react-router-dom";
 
 import * as models from "../models/models.pb";
 import * as Storage from "../handlers/storage/storage.pb";
+import { useImmer } from "use-immer";
 
 export const StorageCreateView: FC = () => {
-	const [ storage, setStorage ] = useState<models.Storage>(models.Storage.defaultValue());
+	const [ storage, setStorage ] = useImmer<models.Storage>(models.Storage.defaultValue());
 	const [ message, setMessage ] = useState<ErrorMessage>();
 	const [ modal, setModal ] = useState<OpenModal>(OpenModal.None)
-	const [ loading, setLoading ] = useState<LoadingStatus>({...LoadingStatus.defaultValue(), fetch: false})
+	const [ loading, setLoading ] = useImmer<LoadingStatus>({...LoadingStatus.defaultValue(), fetch: false})
 
 	const navigate = useNavigate();
 
@@ -36,14 +37,14 @@ export const StorageCreateView: FC = () => {
 					return
 				}
 
-				setLoading({...loading, save: true})
+				setLoading(draft => {draft.save = true})
 				
 				Storage.Create(storage).then(resp => {
 					setStorage(resp)
 					navigate(`../${resp.id.id}`)
 					setMessage(undefined)
 				}).catch(handleError(setMessage)).finally(() => {
-					setLoading({...loading, save: false})
+					setLoading(draft => {draft.save = false})
 				})
 			},
 		}

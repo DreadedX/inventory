@@ -4,7 +4,7 @@ import { PartList } from ".";
 import * as models from "../models/models.pb";
 
 interface Props {
-	storage: models.Storage | undefined
+	storage: models.Storage
 	loading: LoadingStatus
 	attached?: boolean
 }
@@ -12,6 +12,6 @@ interface Props {
 // This is quite litterally a wrapper around PartList...
 export const StorageDetail: FC<Props> = ({ storage, loading, attached }) => {
 	return (<Fragment>
-		<PartList parts={storage?.parts || []} loading={loading.fetch} attached={attached} />
+		<PartList parts={storage.parts} loading={loading.fetch} attached={attached} />
 	</Fragment>);
 }
