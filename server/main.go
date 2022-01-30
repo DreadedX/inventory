@@ -137,7 +137,7 @@ func main() {
 	fileServerStruct := &file.Server{DB: db, Storage: &store}
 	fileServer := file.NewFileServer(fileServerStruct)
 	router.POST(fileServer.PathPrefix()+"*w", gin.WrapH(fileServer))
-	router.GET("file/:partId/:hash", fileServerStruct.Download)
+	router.GET("/file/:partId/:hash", fileServerStruct.Download)
 
 	partServer := part.NewPartServer(&part.Server{DB: db, FileServer: fileServerStruct})
 	router.POST(partServer.PathPrefix()+"*w", gin.WrapH(partServer))
@@ -145,8 +145,40 @@ func main() {
 	storageServer := storage.NewStorageServer(&storage.Server{DB: db})
 	router.POST(storageServer.PathPrefix()+"*w", gin.WrapH(storageServer))
 
-	labelServer := label.NewLabelServer(&label.Server{DB: db, Printer: printer.NewPrinterProtobufClient(printerHost, &http.Client{})})
+
+	printerClient := printer.NewPrinterProtobufClient(printerHost, &http.Client{})
+	labelServer := label.NewLabelServer(&label.Server{DB: db, Printer: printerClient})
 	router.POST(labelServer.PathPrefix()+"*w", gin.WrapH(labelServer))
+
+	router.POST("/print", func(c *gin.Context) {
+		file, err := c.FormFile("file")
+		if err != nil {
+			c.AbortWithStatus(http.StatusBadRequest)
+			return
+		}
+
+		content, err := file.Open()
+		if err != nil {
+			log.Println(err)
+			c.AbortWithStatus(http.StatusInternalServerError)
+			return
+		}
+
+		buffer := make([]byte, file.Size)
+		content.Read(buffer)
+
+		_, err = printerClient.Print(context.Background(), &printer.Request{
+			Image: buffer,
+		})
+
+		if err != nil {
+			log.Println(err)
+			c.AbortWithStatus(http.StatusInternalServerError)
+			return
+		}
+
+		c.Status(http.StatusOK)
+	})
 
 	port, ok := os.LookupEnv("PORT")
 	if !ok {
