@@ -95,7 +95,7 @@ export const PartCreateView: FC = () => {
 					}
 					setFiles([])
 
-					const resp = await Part.Update(finalPart)
+					const resp = await Part.Create(finalPart)
 					setPart(resp)
 
 					setMessage(undefined)
