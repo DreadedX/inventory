@@ -13,11 +13,11 @@ backend = "linux_kernel"
 model = "QL-700"
 printer = "file:///dev/usb/lp0"
 
-qlr = BrotherQLRaster(model)
-qlr.exception_on_warning = True
-
 class PrinterService(object):
     def Print(self, context, request):
+        qlr = BrotherQLRaster(model)
+        qlr.exception_on_warning = True
+
         image = Image.open(BytesIO(request.image))
         instructions = convert(qlr=qlr, images=[image], cut=True, label="62")
         try:
