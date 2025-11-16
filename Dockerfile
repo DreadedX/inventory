@@ -28,7 +28,7 @@ RUN go build
 
 FROM --platform=$BUILDPLATFORM node:alpine AS build-ui
 
-RUN apk add protoc git bash
+RUN apk add protoc git bash yarn
 
 WORKDIR /git
 RUN git clone https://github.com/Semantic-Org/Semantic-UI-CSS
