@@ -1,4 +1,4 @@
-FROM golang:alpine as build-proto
+FROM --platform=$BUILDPLATFORM golang:alpine AS build-proto
 RUN apk add protoc bash
 
 WORKDIR /src/proto
@@ -13,7 +13,7 @@ COPY proto .
 RUN ./generate.sh
 
 
-FROM golang:alpine as build-server
+FROM golang:alpine AS build-server
 
 WORKDIR /src/server
 COPY server/go.mod .
@@ -26,7 +26,7 @@ COPY server .
 RUN go build
 
 
-FROM node:alpine as build-ui
+FROM --platform=$BUILDPLATFORM node:alpine AS build-ui
 
 RUN apk add protoc git bash
 
@@ -45,25 +45,43 @@ COPY ui .
 
 RUN cd ../proto && ./generate_twirpscript.sh
 
+ENV NODE_OPTIONS=--localstorage-file=./local-storage
 RUN yarn build
 
 
-FROM python
-
-RUN set -ex && apt-get update && apt-get install musl
+FROM python:3.10-alpine AS build-printer
 
 WORKDIR /app
 
-RUN mkdir ./printer
-COPY printer/requirements.txt ./printer
-RUN cd ./printer && pip install -r requirements.txt
+RUN python -m venv /venv
+ENV PATH="/venv/bin:$PATH"
 
-COPY --from=build-proto /src/printer ./printer
-COPY printer ./printer
+RUN apk add build-base jpeg-dev zlib-dev
+COPY printer/requirements.txt .
+RUN pip install -r requirements.txt
+
+
+FROM python:3.10-alpine AS printer
+
+RUN apk add zlib jpeg
+COPY --from=build-printer /venv /venv
+ENV PATH="/venv/bin:$PATH"
+
+WORKDIR /app
+COPY --from=build-proto /src/printer .
+COPY printer .
+EXPOSE 4000
+CMD ["uvicorn", "server:app", "--port=4000", "--host=0.0.0.0"]
+
+FROM scratch AS server
+
+
+WORKDIR /app
 
 COPY --from=build-server /src/server/fonts fonts
 COPY --from=build-server /src/server/inventory .
 COPY --from=build-ui /src/ui/build ./ui
 
 ENV GIN_MODE=release
+EXPOSE 8080
 CMD ["./inventory"]

@@ -9,7 +9,7 @@ h11==0.12.0
 idna==3.3
 packbits==0.6
 Pillow==8.4.0
-protobuf==3.19.1
+protobuf==5.29.4
 pyusb==1.2.1
 requests==2.26.0
 structlog==21.5.0
