@@ -49,7 +49,7 @@ ENV NODE_OPTIONS=--localstorage-file=./local-storage
 RUN yarn build
 
 
-FROM python:3.10-alpine AS build-printer
+FROM python:3.14-alpine AS build-printer
 
 WORKDIR /app
 
@@ -61,7 +61,7 @@ COPY printer/requirements.txt .
 RUN pip install -r requirements.txt
 
 
-FROM python:3.10-alpine AS printer
+FROM python:3.14-alpine AS printer
 
 RUN apk add zlib jpeg
 COPY --from=build-printer /venv /venv
