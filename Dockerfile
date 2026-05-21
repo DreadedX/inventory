@@ -71,7 +71,7 @@ WORKDIR /app
 COPY --from=build-proto /src/printer .
 COPY printer .
 EXPOSE 4000
-CMD ["uvicorn", "server:app", "--port=4000", "--host=0.0.0.0"]
+CMD ["uvicorn", "server:app", "--port=4000", "--host=0.0.0.0", "--log-level=trace"]
 
 FROM scratch AS server
 
